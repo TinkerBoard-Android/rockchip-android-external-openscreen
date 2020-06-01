@@ -394,7 +394,7 @@ void MdnsResponder::OnMessageReceived(const MdnsMessage& message,
   OSP_DCHECK(task_runner_->IsRunningOnTaskRunner());
   OSP_DCHECK(message.type() == MessageType::Query);
 
-  // Handle multi-packet known answer suppression
+  // Handle multi-packet known answer suppression.
   if (IsMultiPacketTruncatedQueryMessage(message)) {
     // If there have been an excessive number of known answers received already,
     // then skip them. This would most likely mean that:
