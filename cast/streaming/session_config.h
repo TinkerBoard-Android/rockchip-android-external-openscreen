@@ -6,7 +6,7 @@
 #define CAST_STREAMING_SESSION_CONFIG_H_
 
 #include <array>
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <cstdint>
 
 #include "cast/streaming/ssrc.h"

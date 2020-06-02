@@ -6,7 +6,7 @@
 #define CAST_STREAMING_ANSWER_MESSAGES_H_
 
 #include <array>
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <cstdint>
 #include <initializer_list>
 #include <memory>

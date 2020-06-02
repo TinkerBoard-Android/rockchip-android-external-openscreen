@@ -4,12 +4,14 @@
 
 #include "cast/streaming/bandwidth_estimator.h"
 
+#include <chrono>
 #include <limits>
 #include <random>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "platform/api/time.h"
+#include "util/chrono_helpers.h"
 
 namespace openscreen {
 namespace cast {

@@ -4,7 +4,7 @@
 
 #include "cast/streaming/receiver_session.h"
 
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <string>
 #include <utility>
 

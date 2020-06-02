@@ -371,8 +371,8 @@ void MdnsPublisher::ProcessRecordQueue() {
 }
 
 Clock::duration MdnsPublisher::RecordAnnouncer::GetNextAnnounceDelay() {
-  return std::chrono::duration_cast<Clock::duration>(
-      kMinAnnounceDelay * pow(kIntervalIncreaseFactor, attempts_));
+  return Clock::to_duration(kMinAnnounceDelay *
+                            pow(kIntervalIncreaseFactor, attempts_));
 }
 
 }  // namespace discovery

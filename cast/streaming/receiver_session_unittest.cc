@@ -365,7 +365,7 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
       AudioConstraints{1, 2, 3, 4},
       VideoConstraints{3.14159, Dimensions{320, 240, SimpleFraction{24, 1}},
                        Dimensions{1920, 1080, SimpleFraction{144, 1}}, 3000,
-                       90000000, std::chrono::milliseconds{1000}}}};
+                       90000000, std::chrono::milliseconds(1000)}}};
 
   auto display = std::unique_ptr<DisplayDescription>{new DisplayDescription{
       Dimensions{640, 480, SimpleFraction{60, 1}}, AspectRatio{16, 9},

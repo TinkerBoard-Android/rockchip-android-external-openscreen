@@ -4,7 +4,7 @@
 
 #include "discovery/dnssd/impl/dns_data.h"
 
-#include <chrono>  // NOLINT
+#include <chrono>
 
 #include "discovery/mdns/testing/mdns_test_util.h"
 #include "gmock/gmock.h"

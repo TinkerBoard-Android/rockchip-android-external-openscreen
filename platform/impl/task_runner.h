@@ -8,7 +8,7 @@
 #include <condition_variable>  // NOLINT
 #include <map>
 #include <memory>
-#include <mutex>  // NOLINT
+#include <mutex>
 #include <thread>
 #include <utility>
 #include <vector>

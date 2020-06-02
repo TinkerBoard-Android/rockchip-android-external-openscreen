@@ -43,7 +43,7 @@ std::chrono::seconds GetTtlForRecordType(DnsType type) {
       return kSrvRecordTtl;
     default:
       OSP_NOTREACHED();
-      return std::chrono::seconds{0};
+      return std::chrono::seconds(0);
   }
 }
 

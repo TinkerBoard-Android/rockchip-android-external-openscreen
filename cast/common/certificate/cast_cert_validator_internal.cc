@@ -10,6 +10,7 @@
 #include <openssl/x509v3.h>
 #include <time.h>
 
+#include <string>
 #include <vector>
 
 #include "cast/common/certificate/types.h"

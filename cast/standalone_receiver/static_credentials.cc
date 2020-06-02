@@ -7,6 +7,7 @@
 #include <openssl/mem.h>
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 

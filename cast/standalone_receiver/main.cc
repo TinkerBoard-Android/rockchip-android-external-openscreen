@@ -5,7 +5,7 @@
 #include <getopt.h>
 
 #include <array>
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <iostream>
 
 #include "absl/strings/str_cat.h"
@@ -26,6 +26,7 @@
 #include "platform/impl/platform_client_posix.h"
 #include "platform/impl/task_runner.h"
 #include "platform/impl/text_trace_logging_platform.h"
+#include "util/chrono_helpers.h"
 #include "util/stringprintf.h"
 #include "util/trace_logging.h"
 
@@ -178,7 +179,7 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
                          : openscreen::LogLevel::kInfo);
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
-  PlatformClientPosix::Create(milliseconds{50}, milliseconds{50},
+  PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
 
   auto discovery_state = StartDiscovery(task_runner, interface_info);

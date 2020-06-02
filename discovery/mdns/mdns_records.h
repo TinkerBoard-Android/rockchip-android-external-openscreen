@@ -6,7 +6,7 @@
 #define DISCOVERY_MDNS_MDNS_RECORDS_H_
 
 #include <algorithm>
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <functional>
 #include <initializer_list>
 #include <string>

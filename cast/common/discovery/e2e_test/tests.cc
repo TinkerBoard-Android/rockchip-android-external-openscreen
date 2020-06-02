@@ -20,20 +20,19 @@
 #include "platform/impl/network_interface.h"
 #include "platform/impl/platform_client_posix.h"
 #include "platform/impl/task_runner.h"
+#include "util/chrono_helpers.h"
 
 namespace openscreen {
 namespace cast {
 namespace {
 
 // Total wait time = 4 seconds.
-constexpr std::chrono::milliseconds kWaitLoopSleepTime =
-    std::chrono::milliseconds(500);
+constexpr milliseconds kWaitLoopSleepTime(500);
 constexpr int kMaxWaitLoopIterations = 8;
 
 // Total wait time = 2.5 seconds.
 // NOTE: This must be less than the above wait time.
-constexpr std::chrono::milliseconds kCheckLoopSleepTime =
-    std::chrono::milliseconds(100);
+constexpr milliseconds kCheckLoopSleepTime(100);
 constexpr int kMaxCheckLoopIterations = 25;
 
 
@@ -132,9 +131,9 @@ class DiscoveryE2ETest : public testing::Test {
  public:
   DiscoveryE2ETest() {
     // Sleep to let any packets clear off the network before further tests.
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(milliseconds(500));
 
-    PlatformClientPosix::Create(milliseconds{50}, milliseconds{50});
+    PlatformClientPosix::Create(milliseconds(50), milliseconds(50));
     task_runner_ = PlatformClientPosix::GetInstance()->GetTaskRunner();
   }
 
@@ -422,7 +421,7 @@ TEST_F(DiscoveryE2ETest, ValidateAnnouncementFlow) {
     ASSERT_FALSE(result.is_error());
     ASSERT_EQ(result.value(), 3);
   });
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::this_thread::sleep_for(seconds(3));
   found1 = false;
   found2 = false;
   found3 = false;
@@ -524,7 +523,7 @@ TEST_F(DiscoveryE2ETest, ValidateRefreshFlow) {
   auto discovery_config = GetConfigSettings();
   discovery_config.new_record_announcement_count = 0;
   discovery_config.new_query_announcement_count = 2;
-  constexpr std::chrono::seconds kMaxQueryDuration{3};
+  constexpr seconds kMaxQueryDuration{3};
   SetUpService(discovery_config);
 
   auto instance = GetInfo(1);

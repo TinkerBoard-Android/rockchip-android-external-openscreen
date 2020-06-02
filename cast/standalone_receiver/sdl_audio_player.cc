@@ -6,10 +6,12 @@
 
 #include <chrono>
 #include <sstream>
+#include <utility>
 
 #include "absl/types/span.h"
 #include "cast/standalone_receiver/avcodec_glue.h"
 #include "util/big_endian.h"
+#include "util/chrono_helpers.h"
 #include "util/osp_logging.h"
 #include "util/trace_logging.h"
 
@@ -113,9 +115,9 @@ ErrorOr<Clock::time_point> SDLAudioPlayer::RenderNextFrame(
       pending_audio_spec_.samples *= 2;
     }
 
-    approximate_lead_time_ = (pending_audio_spec_.samples *
-                              duration_cast<Clock::duration>(kOneSecond)) /
-                             pending_audio_spec_.freq;
+    approximate_lead_time_ =
+        (pending_audio_spec_.samples * Clock::to_duration(kOneSecond)) /
+        pending_audio_spec_.freq;
   }
 
   // If the decoded audio is in planar format, interleave it for SDL.

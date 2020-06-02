@@ -4,7 +4,7 @@
 
 #include <getopt.h>
 
-#include <chrono>  // NOLINT
+#include <chrono>
 #include <cinttypes>
 #include <csignal>
 #include <cstdio>
@@ -26,6 +26,7 @@
 #include "platform/impl/task_runner.h"
 #include "platform/impl/text_trace_logging_platform.h"
 #include "util/alarm.h"
+#include "util/chrono_helpers.h"
 
 #if defined(CAST_STANDALONE_SENDER_HAVE_EXTERNAL_LIBS)
 #include "cast/standalone_sender/simulated_capturer.h"
@@ -243,9 +244,8 @@ class LoopingFileSender final : public SimulatedAudioCapturer::Client,
 
   void UpdateStatusOnConsole() {
     const Clock::duration elapsed = latest_frame_time_ - capture_start_time_;
-    const auto seconds_part = duration_cast<seconds>(elapsed);
-    const auto millis_part =
-        duration_cast<milliseconds>(elapsed - seconds_part);
+    const auto seconds_part = to_seconds(elapsed);
+    const auto millis_part = to_microseconds(elapsed - seconds_part);
     // The control codes here attempt to erase the current line the cursor is
     // on, and then print out the updated status text. If the terminal does not
     // support simple ANSI escape codes, the following will still work, but
@@ -440,7 +440,7 @@ int StandaloneSenderMain(int argc, char* argv[]) {
 #if defined(CAST_STANDALONE_SENDER_HAVE_EXTERNAL_LIBS)
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
-  PlatformClientPosix::Create(milliseconds{50}, milliseconds{50},
+  PlatformClientPosix::Create(Clock::duration{50}, Clock::duration{50},
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
 
   {

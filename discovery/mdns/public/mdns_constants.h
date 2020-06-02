@@ -429,7 +429,7 @@ constexpr uint8_t kTXTEmptyRdata = 0;
 // RFC 6762 section 8.1 specifies that a probe should wait 250 ms between
 // subsequent probe queries.
 constexpr Clock::duration kDelayBetweenProbeQueries =
-    std::chrono::duration_cast<Clock::duration>(std::chrono::milliseconds{250});
+    Clock::to_duration(std::chrono::milliseconds(250));
 
 // RFC 6762 section 8.1 specifies that the probing phase should send out probe
 // requests 3 times before treating the probe as completed.

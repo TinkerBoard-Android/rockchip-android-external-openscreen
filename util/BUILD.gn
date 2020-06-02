@@ -23,6 +23,7 @@ source_set("util") {
     "alarm.h",
     "big_endian.cc",
     "big_endian.h",
+    "chrono_helpers.h",
     "crypto/certificate_utils.cc",
     "crypto/certificate_utils.h",
     "crypto/digest_sign.cc",

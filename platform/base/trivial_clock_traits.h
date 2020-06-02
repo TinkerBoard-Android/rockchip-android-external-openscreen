@@ -10,16 +10,6 @@
 
 namespace openscreen {
 
-// Common time types used throughout Open Screen. We should always use these
-// types for time, if there is ever a namespace collision we have done something
-// horribly wrong.
-using std::chrono::duration_cast;
-using std::chrono::hours;
-using std::chrono::microseconds;
-using std::chrono::milliseconds;
-using std::chrono::nanoseconds;
-using std::chrono::seconds;
-
 // The Open Screen monotonic clock traits description, providing all the C++14
 // requirements of a TrivialClock, for use with STL <chrono>.
 class TrivialClockTraits {
@@ -34,8 +24,14 @@ class TrivialClockTraits {
   using time_point = std::chrono::time_point<TrivialClockTraits, duration>;
   static constexpr bool is_steady = true;
 
+  // Helper method for named requirements.
+  template <typename D>
+  static constexpr duration to_duration(D d) {
+    return std::chrono::duration_cast<duration>(d);
+  }
+
   // Time point values from the clock use microsecond precision, as a reasonably
-  // high-resoulution clock is required. The time source must tick forward at
+  // high-resolution clock is required. The time source must tick forward at
   // least 10000 times per second.
   using kRequiredResolution = std::ratio<1, 10000>;
 

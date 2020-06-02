@@ -4,10 +4,12 @@
 
 #include "cast/streaming/answer_messages.h"
 
+#include <chrono>
 #include <utility>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "util/chrono_helpers.h"
 #include "util/json/json_serialization.h"
 
 namespace openscreen {
@@ -22,12 +24,12 @@ const Answer kValidAnswer{
     std::vector<Ssrc>{123, 456},  // ssrcs
     Constraints{
         AudioConstraints{
-            96000,                           // max_sample_rate
-            7,                               // max_channels
-            32000,                           // min_bit_rate
-            96000,                           // max_bit_rate
-            std::chrono::milliseconds(2000)  // max_delay
-        },                                   // audio
+            96000,              // max_sample_rate
+            7,                  // max_channels
+            32000,              // min_bit_rate
+            96000,              // max_bit_rate
+            milliseconds(2000)  // max_delay
+        },                      // audio
         VideoConstraints{
             40000.0,  // max_pixels_per_second
             Dimensions{
@@ -40,11 +42,11 @@ const Answer kValidAnswer{
                 1080,                   // height
                 SimpleFraction{288, 2}  // frame_rate
             },
-            300000,                          // min_bit_rate
-            144000000,                       // max_bit_rate
-            std::chrono::milliseconds(3000)  // max_delay
-        }                                    // video
-    },                                       // constraints
+            300000,             // min_bit_rate
+            144000000,          // max_bit_rate
+            milliseconds(3000)  // max_delay
+        }                       // video
+    },                          // constraints
     DisplayDescription{
         Dimensions{
             640,                   // width

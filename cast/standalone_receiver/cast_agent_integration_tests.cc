@@ -7,8 +7,8 @@
 #include "cast/common/channel/virtual_connection_manager.h"
 #include "cast/common/channel/virtual_connection_router.h"
 #include "cast/sender/public/sender_socket_factory.h"
+#include "cast/standalone_receiver/cast_agent.h"
 #include "cast/standalone_receiver/static_credentials.h"
-#include "cast_agent.h"
 #include "gtest/gtest.h"
 #include "platform/api/serial_delete_ptr.h"
 #include "platform/api/time.h"
@@ -57,8 +57,8 @@ class MockSender final : public SenderSocketFactory::Client,
 class CastAgentIntegrationTest : public ::testing::Test {
  public:
   void SetUp() override {
-    PlatformClientPosix::Create(std::chrono::milliseconds{50},
-                                std::chrono::milliseconds{50});
+    PlatformClientPosix::Create(std::chrono::milliseconds(50),
+                                std::chrono::milliseconds(50));
     task_runner_ = reinterpret_cast<TaskRunnerImpl*>(
         PlatformClientPosix::GetInstance()->GetTaskRunner());
 
