@@ -4,6 +4,8 @@
 
 #include "util/simple_fraction.h"
 
+#include <math.h>
+
 #include <limits>
 
 #include "gtest/gtest.h"
@@ -15,16 +17,15 @@ namespace {
 constexpr int kMin = std::numeric_limits<int>::min();
 constexpr int kMax = std::numeric_limits<int>::max();
 
-void ExpectFromStringEquals(absl::string_view s,
-                            const SimpleFraction& expected) {
-  const ErrorOr<SimpleFraction> f = SimpleFraction::FromString(s);
-  EXPECT_TRUE(f.is_value());
+void ExpectFromStringEquals(const char* s, const SimpleFraction& expected) {
+  const ErrorOr<SimpleFraction> f = SimpleFraction::FromString(std::string(s));
+  EXPECT_TRUE(f.is_value()) << "from string: '" << s << "'";
   EXPECT_EQ(expected, f.value());
 }
 
-void ExpectFromStringError(absl::string_view s) {
-  const auto f = SimpleFraction::FromString(s);
-  EXPECT_TRUE(f.is_error());
+void ExpectFromStringError(const char* s) {
+  const auto f = SimpleFraction::FromString(std::string(s));
+  EXPECT_TRUE(f.is_error()) << "from string: '" << s << "'";
 }
 }  // namespace
 
@@ -91,6 +92,7 @@ TEST(SimpleFractionTest, Positivity) {
 TEST(SimpleFractionTest, CastToDouble) {
   EXPECT_DOUBLE_EQ(0.0, static_cast<double>(SimpleFraction{0, 1}));
   EXPECT_DOUBLE_EQ(1.0, static_cast<double>(SimpleFraction{1, 1}));
+  EXPECT_TRUE(isnan(static_cast<double>(SimpleFraction{1, 0})));
   EXPECT_DOUBLE_EQ(1.0, static_cast<double>(SimpleFraction{kMax, kMax}));
   EXPECT_DOUBLE_EQ(1.0, static_cast<double>(SimpleFraction{kMin, kMin}));
 }

@@ -12,14 +12,15 @@
 #include "absl/strings/numbers.h"
 #include "cast/streaming/environment.h"
 #include "cast/streaming/message_port.h"
-#include "cast/streaming/message_util.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/receiver.h"
+#include "util/json/json_helpers.h"
 #include "util/osp_logging.h"
 
 namespace openscreen {
 namespace cast {
 
+/// NOTE: Constants here are all taken from the Cast V2: Mirroring Control
 // JSON message field values specific to the Receiver Session.
 static constexpr char kMessageTypeOffer[] = "OFFER";
 
@@ -27,6 +28,20 @@ static constexpr char kMessageTypeOffer[] = "OFFER";
 static constexpr char kOfferMessageBody[] = "offer";
 static constexpr char kKeyType[] = "type";
 static constexpr char kSequenceNumber[] = "seqNum";
+
+/// Protocol specification: http://goto.google.com/mirroring-control-protocol
+// TODO(jophba): document the protocol in a public repository.
+static constexpr char kMessageKeyType[] = "type";
+static constexpr char kMessageTypeAnswer[] = "ANSWER";
+
+/// ANSWER message fields.
+static constexpr char kAnswerMessageBody[] = "answer";
+static constexpr char kResult[] = "result";
+static constexpr char kResultOk[] = "ok";
+static constexpr char kResultError[] = "error";
+static constexpr char kErrorMessageBody[] = "error";
+static constexpr char kErrorCode[] = "code";
+static constexpr char kErrorDescription[] = "description";
 
 // Using statements for constructor readability.
 using Preferences = ReceiverSession::Preferences;
@@ -76,7 +91,30 @@ const Stream* SelectStream(const std::vector<Codec>& preferred_codecs,
   }
   return nullptr;
 }
+// Helper method that creates an invalid Answer response.
+Json::Value CreateInvalidAnswerMessage(Error error) {
+  Json::Value message_root;
+  message_root[kMessageKeyType] = kMessageTypeAnswer;
+  message_root[kResult] = kResultError;
+  message_root[kErrorMessageBody][kErrorCode] = static_cast<int>(error.code());
+  message_root[kErrorMessageBody][kErrorDescription] = error.message();
 
+  return message_root;
+}
+
+// Helper method that creates an Answer response. May be valid or invalid.
+Json::Value CreateAnswerMessage(const Answer& answer) {
+  if (!answer.IsValid()) {
+    return CreateInvalidAnswerMessage(Error(Error::Code::kParameterInvalid,
+                                            "Answer struct in invalid state"));
+  }
+
+  Json::Value message_root;
+  message_root[kMessageKeyType] = kMessageTypeAnswer;
+  message_root[kAnswerMessageBody] = answer.ToJson();
+  message_root[kResult] = kResultOk;
+  return message_root;
+}
 }  // namespace
 
 Preferences::Preferences() = default;
@@ -129,21 +167,22 @@ void ReceiverSession::OnMessage(absl::string_view sender_id,
   }
 
   // TODO(jophba): add sender connected/disconnected messaging.
-  auto sequence_number = ParseInt(message_json.value(), kSequenceNumber);
-  if (!sequence_number) {
+  int sequence_number;
+  if (!json::ParseAndValidateInt(message_json.value()[kSequenceNumber],
+                                 &sequence_number)) {
     OSP_LOG_WARN << "Invalid message sequence number";
     return;
   }
 
-  auto key_or_error = ParseString(message_json.value(), kKeyType);
-  if (!key_or_error) {
+  std::string key;
+  if (!json::ParseAndValidateString(message_json.value()[kKeyType], &key)) {
     OSP_LOG_WARN << "Invalid message key";
     return;
   }
 
   Message parsed_message{sender_id.data(), message_namespace.data(),
-                         sequence_number.value()};
-  if (key_or_error.value() == kMessageTypeOffer) {
+                         sequence_number};
+  if (key == kMessageTypeOffer) {
     parsed_message.body = std::move(message_json.value()[kOfferMessageBody]);
     if (parsed_message.body.isNull()) {
       OSP_LOG_WARN << "Invalid message offer body";
@@ -180,7 +219,6 @@ void ReceiverSession::OnOffer(Message* message) {
         SelectStream(preferences_.video_codecs, offer.value().video_streams);
   }
 
-  cast_mode_ = offer.value().cast_mode;
   auto receivers =
       TrySpawningReceivers(selected_audio_stream, selected_video_stream);
   if (receivers) {
@@ -188,9 +226,9 @@ void ReceiverSession::OnOffer(Message* message) {
         ConstructAnswer(message, selected_audio_stream, selected_video_stream);
     client_->OnNegotiated(this, std::move(receivers.value()));
 
-    message->body = answer.ToAnswerMessage();
+    message->body = CreateAnswerMessage(answer);
   } else {
-    message->body = CreateInvalidAnswer(receivers.error());
+    message->body = CreateInvalidAnswerMessage(receivers.error());
   }
 
   SendMessage(message);
@@ -266,20 +304,20 @@ Answer ReceiverSession::ConstructAnswer(
 
   absl::optional<Constraints> constraints;
   if (preferences_.constraints) {
-    constraints = *preferences_.constraints;
+    constraints = absl::optional<Constraints>(*preferences_.constraints);
   }
 
   absl::optional<DisplayDescription> display;
   if (preferences_.display_description) {
-    display = *preferences_.display_description;
+    display =
+        absl::optional<DisplayDescription>(*preferences_.display_description);
   }
 
-  return Answer{cast_mode_,
-                environment_->GetBoundLocalEndpoint().port,
+  return Answer{environment_->GetBoundLocalEndpoint().port,
                 std::move(stream_indexes),
                 std::move(stream_ssrcs),
-                constraints,
-                display,
+                std::move(constraints),
+                std::move(display),
                 std::vector<int>{},  // receiver_rtcp_event_log
                 std::vector<int>{},  // receiver_rtcp_dscp
                 supports_wifi_status_reporting_};

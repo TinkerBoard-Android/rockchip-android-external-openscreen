@@ -10,6 +10,11 @@
 #include <utility>
 #include <vector>
 
+// TODO(jophba): remove public abseil dependencies. Will require modifying
+// either Optional or ConfiguredReceivers, as the compiler currently has an
+// error.
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "cast/streaming/answer_messages.h"
 #include "cast/streaming/message_port.h"
 #include "cast/streaming/offer_messages.h"
@@ -52,6 +57,8 @@ class ReceiverSession final : public MessagePort::Client {
 
     // If the receiver is audio- or video-only, either of the receivers
     // may be nullptr. However, in the majority of cases they will be populated.
+    // TODO(jophba): remove AudioStream, VideoStream from public API.
+    // TODO(jophba): remove absl::optional from public API.
     absl::optional<ConfiguredReceiver<AudioStream>> audio;
     absl::optional<ConfiguredReceiver<VideoStream>> video;
   };
@@ -153,7 +160,6 @@ class ReceiverSession final : public MessagePort::Client {
   MessagePort* const message_port_;
   const Preferences preferences_;
 
-  CastMode cast_mode_;
   bool supports_wifi_status_reporting_ = false;
   ReceiverPacketRouter packet_router_;
 

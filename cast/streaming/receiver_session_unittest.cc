@@ -12,6 +12,7 @@
 #include "platform/base/ip_address.h"
 #include "platform/test/fake_clock.h"
 #include "platform/test/fake_task_runner.h"
+#include "util/chrono_helpers.h"
 
 using ::testing::_;
 using ::testing::Invoke;
@@ -314,7 +315,6 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithDefaultPreferences) {
   // Spot check the answer body fields. We have more in depth testing
   // of answer behavior in answer_messages_unittest, but here we can
   // ensure that the ReceiverSession properly configured the answer.
-  EXPECT_EQ("mirroring", answer_body["castMode"].asString());
   EXPECT_EQ(1337, answer_body["sendIndexes"][0].asInt());
   EXPECT_EQ(31338, answer_body["sendIndexes"][1].asInt());
   EXPECT_LT(0, answer_body["udpPort"].asInt());
@@ -361,15 +361,19 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
   auto message_port = std::make_unique<SimpleMessagePort>();
   StrictMock<FakeClient> client;
 
-  auto constraints = std::unique_ptr<Constraints>{new Constraints{
+  auto constraints = std::make_unique<Constraints>(Constraints{
       AudioConstraints{1, 2, 3, 4},
-      VideoConstraints{3.14159, Dimensions{320, 240, SimpleFraction{24, 1}},
-                       Dimensions{1920, 1080, SimpleFraction{144, 1}}, 3000,
-                       90000000, std::chrono::milliseconds(1000)}}};
 
-  auto display = std::unique_ptr<DisplayDescription>{new DisplayDescription{
-      Dimensions{640, 480, SimpleFraction{60, 1}}, AspectRatio{16, 9},
-      AspectRatioConstraint::kFixed}};
+      VideoConstraints{3.14159,
+                       absl::optional<Dimensions>(
+                           Dimensions{320, 240, SimpleFraction{24, 1}}),
+                       Dimensions{1920, 1080, SimpleFraction{144, 1}}, 3000,
+                       90000000, milliseconds(1000)}});
+
+  auto display = std::make_unique<DisplayDescription>(DisplayDescription{
+      absl::optional<Dimensions>(Dimensions{640, 480, SimpleFraction{60, 1}}),
+      absl::optional<AspectRatio>(AspectRatio{16, 9}),
+      absl::optional<AspectRatioConstraint>(AspectRatioConstraint::kFixed)});
 
   auto environment = MakeEnvironment();
   ReceiverSession session(
