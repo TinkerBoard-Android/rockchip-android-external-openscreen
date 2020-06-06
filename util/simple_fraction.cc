@@ -4,71 +4,43 @@
 
 #include "util/simple_fraction.h"
 
-#include <stdlib.h>
-
 #include <cmath>
 #include <limits>
-#include <sstream>
-#include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "util/osp_logging.h"
+
 namespace openscreen {
-namespace {
-
-constexpr char kDelimiter[] = "/";
-
-// The Linux implementation of strtol is overly lenient on parsing strings, e.g.
-// the string "not a number" is a valid number=0. We wrap it here to avoid
-// complicated checking in usage.
-ErrorOr<int> StringToLong(const std::string& str) {
-  if (str.empty()) {
-    return Error::Code::kParameterInvalid;
-  }
-
-  char* end_pointer;
-  errno = 0;
-  const int output = strtol(str.data(), &end_pointer, 10);
-  if (*end_pointer != '\0' || errno != 0) {
-    return Error::Code::kParameterInvalid;
-  }
-  return output;
-}
-}  // namespace
 
 // static
-ErrorOr<SimpleFraction> SimpleFraction::FromString(const std::string& value) {
-  // Zeroth case: empty string.
-  if (value.empty()) {
+ErrorOr<SimpleFraction> SimpleFraction::FromString(absl::string_view value) {
+  std::vector<absl::string_view> fields = absl::StrSplit(value, '/');
+  if (fields.size() != 1 && fields.size() != 2) {
     return Error::Code::kParameterInvalid;
   }
 
-  std::size_t delimiter_pos = value.find(kDelimiter);
-  // First case: simple number, not a fraction.
-  if (delimiter_pos == std::string::npos) {
-    ErrorOr<int> numerator = StringToLong(value);
-    if (numerator.is_error()) {
-      return std::move(numerator.error());
-    }
-    return SimpleFraction{numerator.value(), 1};
-  }
-  // Second case: proper fraction.
-  const std::string first_field = value.substr(0, delimiter_pos);
-  const std::string second_field = value.substr(delimiter_pos + 1);
-  ErrorOr<int> numerator = StringToLong(first_field);
-  ErrorOr<int> denominator = StringToLong(second_field);
-  if (numerator.is_error() || denominator.is_error()) {
+  int numerator;
+  int denominator = 1;
+  if (!absl::SimpleAtoi(fields[0], &numerator)) {
     return Error::Code::kParameterInvalid;
   }
-  return SimpleFraction{numerator.value(), denominator.value()};
+
+  if (fields.size() == 2) {
+    if (!absl::SimpleAtoi(fields[1], &denominator)) {
+      return Error::Code::kParameterInvalid;
+    }
+  }
+
+  return SimpleFraction{numerator, denominator};
 }
 
 std::string SimpleFraction::ToString() const {
   if (denominator == 1) {
     return std::to_string(numerator);
   }
-  std::ostringstream ss;
-  ss << numerator << kDelimiter << denominator;
-  return ss.str();
+  return absl::StrCat(numerator, "/", denominator);
 }
 
 bool SimpleFraction::operator==(const SimpleFraction& other) const {

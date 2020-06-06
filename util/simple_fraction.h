@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "platform/base/error.h"
 
 namespace openscreen {
@@ -25,7 +26,7 @@ namespace openscreen {
 // 4. A SimpleFraction is "positive" if and only if it is defined and at least
 //    equal to zero. Since reductions are not performed, -1/-1 is negative.
 struct SimpleFraction {
-  static ErrorOr<SimpleFraction> FromString(const std::string& value);
+  static ErrorOr<SimpleFraction> FromString(absl::string_view value);
   std::string ToString() const;
 
   bool operator==(const SimpleFraction& other) const;
