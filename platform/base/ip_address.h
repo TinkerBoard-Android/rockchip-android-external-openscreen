@@ -28,7 +28,7 @@ class IPAddress {
   static constexpr size_t kV4Size = 4;
   static constexpr size_t kV6Size = 16;
 
-  IPAddress();
+  constexpr IPAddress() : version_(Version::kV4), bytes_({}) {}
 
   // |bytes| contains 4 octets for IPv4, or 8 hextets (16 bytes of big-endian
   // shorts) for IPv6.
@@ -95,6 +95,8 @@ struct IPEndpoint {
   IPAddress address;
   uint16_t port = 0;
 
+  // Used with various socket types to indicate "any" address.
+  static const IPEndpoint kAny;
   explicit operator bool() const;
 
   // Parses a text representation of an IPv4/IPv6 address and port (e.g.

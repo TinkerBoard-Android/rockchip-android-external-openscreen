@@ -112,7 +112,7 @@ class LoopingFileSender final : public SimulatedAudioCapturer::Client,
                     const IPEndpoint& remote_endpoint,
                     int max_bitrate,
                     bool use_android_rtp_hack)
-      : env_(&Clock::now, task_runner, IPEndpoint{IPAddress(), 0}),
+      : env_(&Clock::now, task_runner),
         path_(path),
         packet_router_(&env_),
         max_bitrate_(max_bitrate),

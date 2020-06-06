@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "cast/streaming/constants.h"
+#include "cast/streaming/mock_environment.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "platform/base/ip_address.h"
@@ -125,16 +126,6 @@ absl::Span<uint8_t> ToEmptyPacketBuffer(Clock::time_point send_time,
                                         absl::Span<uint8_t> buffer) {
   return buffer.subspan(0, 0);
 }
-
-class MockEnvironment : public Environment {
- public:
-  MockEnvironment(ClockNowFunctionPtr now_function, TaskRunner* task_runner)
-      : Environment(now_function, task_runner) {}
-
-  ~MockEnvironment() override = default;
-
-  MOCK_METHOD1(SendPacket, void(absl::Span<const uint8_t> packet));
-};
 
 class MockSender : public SenderPacketRouter::Sender {
  public:
