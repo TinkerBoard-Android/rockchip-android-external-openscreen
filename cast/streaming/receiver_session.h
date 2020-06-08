@@ -81,8 +81,8 @@ class ReceiverSession final : public MessagePort::Client {
 
   // The embedder has the option of providing a list of prioritized
   // preferences for selecting from the offer.
-  enum class AudioCodec : int { kAac, kOpus };
-  enum class VideoCodec : int { kH264, kVp8, kHevc, kVp9 };
+  enum class AudioCodec { kAac, kOpus };
+  enum class VideoCodec { kH264, kVp8, kHevc, kVp9 };
 
   // Note: embedders are required to implement the following
   // codecs to be Cast V2 compliant: H264, VP8, AAC, Opus.
@@ -134,22 +134,24 @@ class ReceiverSession final : public MessagePort::Client {
     Json::Value body;
   };
 
-  // Message handlers
+  // Specific message type handler methods.
   void OnOffer(Message* message);
 
+  // Used by SpawnReceivers to generate a receiver for a specific stream.
   std::pair<SessionConfig, std::unique_ptr<Receiver>> ConstructReceiver(
       const Stream& stream);
 
-  // Either stream input to this method may be null, however if both
-  // are null this method returns error.
-  ErrorOr<ConfiguredReceivers> TrySpawningReceivers(const AudioStream* audio,
-                                                    const VideoStream* video);
+  // Creates a set of configured receivers from a given pair of audio and
+  // video streams. NOTE: either audio or video may be null, but not both.
+  ConfiguredReceivers SpawnReceivers(const AudioStream* audio,
+                                     const VideoStream* video);
 
   // Callers of this method should ensure at least one stream is non-null.
   Answer ConstructAnswer(Message* message,
                          const AudioStream* audio,
                          const VideoStream* video);
 
+  // Sends a message over the message port.
   void SendMessage(Message* message);
 
   // Handles resetting receivers and notifying the client.
