@@ -19,6 +19,12 @@
 namespace openscreen {
 
 // static
+const IPAddress IPAddress::kAnyV4{0, 0, 0, 0};
+
+// static
+const IPAddress IPAddress::kAnyV6{0, 0, 0, 0, 0, 0, 0, 0};
+
+// static
 const IPAddress IPAddress::kV4LoopbackAddress{127, 0, 0, 1};
 
 // static
@@ -215,7 +221,10 @@ ErrorOr<IPAddress> IPAddress::Parse(const std::string& s) {
 }
 
 // static
-constexpr const IPEndpoint IPEndpoint::kAny{};
+const IPEndpoint IPEndpoint::kAnyV4{IPAddress::kAnyV4, 0};
+
+// static
+const IPEndpoint IPEndpoint::kAnyV6{IPAddress::kAnyV6, 0};
 
 IPEndpoint::operator bool() const {
   return address || port;
