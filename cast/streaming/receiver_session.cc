@@ -84,7 +84,7 @@ const Stream* SelectStream(const std::vector<Codec>& preferred_codecs,
     const std::string codec_name = CodecToString(codec);
     for (const Stream& offered_stream : offered_streams) {
       if (offered_stream.stream.codec_name == codec_name) {
-        OSP_DVLOG << "Selected " << codec_name << " as codec for streaming.";
+        OSP_DVLOG << "Selected " << codec_name << " as codec for streaming";
         return &offered_stream;
       }
     }
@@ -163,6 +163,7 @@ void ReceiverSession::OnMessage(absl::string_view sender_id,
     OSP_DLOG_WARN << "Received an invalid message: " << message;
     return;
   }
+  OSP_DVLOG << "Received a message: " << message;
 
   // TODO(jophba): add sender connected/disconnected messaging.
   int sequence_number;
@@ -193,8 +194,7 @@ void ReceiverSession::OnMessage(absl::string_view sender_id,
 }
 
 void ReceiverSession::OnError(Error error) {
-  OSP_DLOG_WARN << "ReceiverSession's message port encountered an error: "
-                << error;
+  OSP_DLOG_WARN << "ReceiverSession message port error: " << error;
 }
 
 void ReceiverSession::OnOffer(Message* message) {
@@ -222,6 +222,7 @@ void ReceiverSession::OnOffer(Message* message) {
   if (!selected_audio_stream && !selected_video_stream) {
     message->body = CreateInvalidAnswerMessage(
         Error(Error::Code::kParseError, "No selected streams"));
+    OSP_DLOG_WARN << "Failed to select any streams from OFFER";
     SendMessage(message);
     return;
   }
@@ -231,6 +232,7 @@ void ReceiverSession::OnOffer(Message* message) {
   if (!answer.IsValid()) {
     message->body = CreateInvalidAnswerMessage(
         Error(Error::Code::kParseError, "Invalid answer message"));
+    OSP_DLOG_WARN << "Failed to construct an ANSWER message";
     SendMessage(message);
     return;
   }
@@ -336,9 +338,14 @@ void ReceiverSession::SendMessage(Message* message) {
 
   auto body_or_error = json::Stringify(message->body);
   if (body_or_error.is_value()) {
+    OSP_DVLOG << "Sending message: SENDER[" << message->sender_id
+              << "], NAMESPACE[" << message->message_namespace << "], BODY:\n"
+              << body_or_error.value();
     message_port_->PostMessage(message->sender_id, message->message_namespace,
                                body_or_error.value());
   } else {
+    OSP_DLOG_WARN << "Sending message failed with error:\n"
+                  << body_or_error.error();
     client_->OnError(this, body_or_error.error());
   }
 }
