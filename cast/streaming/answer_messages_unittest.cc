@@ -266,6 +266,26 @@ TEST(AnswerMessagesTest, ProperlyPopulatedAnswerSerializesProperly) {
   EXPECT_EQ(rtp_extensions[1], "bar");
 }
 
+TEST(AnswerMessagesTest, EmptyArraysOmitted) {
+  Answer missing_event_log = kValidAnswer;
+  missing_event_log.receiver_rtcp_event_log.clear();
+  ASSERT_TRUE(missing_event_log.IsValid());
+  Json::Value root = missing_event_log.ToJson();
+  EXPECT_FALSE(root["receiverRtcpEventLog"]);
+
+  Answer missing_rtcp_dscp = kValidAnswer;
+  missing_rtcp_dscp.receiver_rtcp_dscp.clear();
+  ASSERT_TRUE(missing_rtcp_dscp.IsValid());
+  root = missing_rtcp_dscp.ToJson();
+  EXPECT_FALSE(root["receiverRtcpDscp"]);
+
+  Answer missing_extensions = kValidAnswer;
+  missing_extensions.rtp_extensions.clear();
+  ASSERT_TRUE(missing_extensions.IsValid());
+  root = missing_extensions.ToJson();
+  EXPECT_FALSE(root["rtpExtensions"]);
+}
+
 TEST(AnswerMessagesTest, InvalidDimensionsCauseInvalid) {
   Answer invalid_dimensions = kValidAnswer;
   invalid_dimensions.display->dimensions->width = -1;

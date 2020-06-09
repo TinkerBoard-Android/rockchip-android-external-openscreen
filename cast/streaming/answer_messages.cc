@@ -441,9 +441,18 @@ Json::Value Answer::ToJson() const {
   root[kReceiverGetStatus] = supports_wifi_status_reporting;
   root[kSendIndexes] = PrimitiveVectorToJson(send_indexes);
   root[kSsrcs] = PrimitiveVectorToJson(ssrcs);
-  root[kReceiverRtcpEventLog] = PrimitiveVectorToJson(receiver_rtcp_event_log);
-  root[kReceiverRtcpDscp] = PrimitiveVectorToJson(receiver_rtcp_dscp);
-  root[kRtpExtensions] = PrimitiveVectorToJson(rtp_extensions);
+  // Some sender do not handle empty array properly, so we omit these fields
+  // if they are empty.
+  if (!receiver_rtcp_event_log.empty()) {
+    root[kReceiverRtcpEventLog] =
+        PrimitiveVectorToJson(receiver_rtcp_event_log);
+  }
+  if (!receiver_rtcp_dscp.empty()) {
+    root[kReceiverRtcpDscp] = PrimitiveVectorToJson(receiver_rtcp_dscp);
+  }
+  if (!rtp_extensions.empty()) {
+    root[kRtpExtensions] = PrimitiveVectorToJson(rtp_extensions);
+  }
   return root;
 }
 
