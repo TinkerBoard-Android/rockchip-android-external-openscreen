@@ -419,6 +419,8 @@ class MdnsRecord {
                       record.ttl_.count(), record.rdata_);
   }
 
+  std::string ToString() const;
+
  private:
   static bool IsValidConfig(const DomainName& name,
                             DnsType dns_type,

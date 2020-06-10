@@ -372,9 +372,7 @@ void MdnsQuerier::OnMessageReceived(const MdnsMessage& message) {
   for (const MdnsRecord& record : message.answers()) {
     if (ShouldAnswerRecordBeProcessed(record)) {
       ProcessRecord(record);
-      OSP_DVLOG << "\tProcessing answer record for domain '"
-                << record.name().ToString() << "' of type '"
-                << record.dns_type() << "'...";
+      OSP_DVLOG << "\tProcessing answer record (" << record.ToString() << ")";
       found_relevant_records = true;
       processed_count++;
     }
@@ -385,9 +383,8 @@ void MdnsQuerier::OnMessageReceived(const MdnsMessage& message) {
   // individual records relevant to this querier to update the cache.
   for (const MdnsRecord& record : message.additional_records()) {
     if (found_relevant_records || ShouldAnswerRecordBeProcessed(record)) {
-      OSP_DVLOG << "\tProcessing additional record for domain '"
-                << record.name().ToString() << "' of type '"
-                << record.dns_type() << "'...";
+      OSP_DVLOG << "\tProcessing additional record (" << record.ToString()
+                << ")";
       ProcessRecord(record);
       processed_count++;
     }

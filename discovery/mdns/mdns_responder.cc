@@ -513,7 +513,7 @@ void MdnsResponder::ProcessQueries(
   for (const auto& question : questions) {
     OSP_DVLOG << "\tProcessing mDNS Query for domain: '"
               << question.name().ToString() << "', type: '"
-              << question.dns_type() << "'";
+              << question.dns_type() << "' from '" << src << "'";
 
     // NSEC records should not be queried for.
     if (question.dns_type() == DnsType::kNSEC) {
@@ -586,18 +586,25 @@ void MdnsResponder::SendResponse(
     // method is called. Exclusive ownership cannot be gained for a record which
     // has previously been published, and if this host is the exclusive owner
     // then this method will have been called without any delay on the task
-    // runner
+    // runner.
     ApplyQueryResults(&message, record_handler_, question.name(), known_answers,
                       question.dns_type(), question.dns_class(),
                       is_exclusive_owner);
   }
 
   // Send the response only if it contains answers to the query.
+  OSP_DVLOG << "\tCompleted Processing mDNS Query for domain: '"
+            << question.name().ToString() << "', type: '" << question.dns_type()
+            << "', with " << message.answers().size() << " results:";
+  for (const auto& record : message.answers()) {
+    OSP_DVLOG << "\t\tanswer (" << record.ToString() << ")";
+  }
+  for (const auto& record : message.additional_records()) {
+    OSP_DVLOG << "\t\tadditional record ('" << record.ToString() << ")";
+  }
+
   if (!message.answers().empty()) {
-    OSP_DVLOG << "\tmDNS Query processed and response sent!";
     send_response(message);
-  } else {
-    OSP_DVLOG << "\tmDNS Query processed and no response sent!";
   }
 }
 

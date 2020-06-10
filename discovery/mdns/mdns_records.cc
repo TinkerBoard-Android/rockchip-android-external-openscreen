@@ -5,6 +5,9 @@
 #include "discovery/mdns/mdns_records.h"
 
 #include <cctype>
+#include <limits>
+#include <sstream>
+#include <vector>
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
@@ -560,6 +563,34 @@ size_t MdnsRecord::MaxWireSize() const {
   auto wire_size_visitor = [](auto&& arg) { return arg.MaxWireSize(); };
   // NAME size, 2-byte TYPE, 2-byte CLASS, 4-byte TTL, RDATA size
   return name_.MaxWireSize() + absl::visit(wire_size_visitor, rdata_) + 8;
+}
+
+std::string MdnsRecord::ToString() const {
+  std::stringstream ss;
+  ss << "name: '" << name_.ToString() << "'";
+  ss << ", type: " << dns_type_;
+
+  if (dns_type_ == DnsType::kPTR) {
+    const DomainName& target = absl::get<PtrRecordRdata>(rdata_).ptr_domain();
+    ss << ", target: '" << target.ToString() << "'";
+  } else if (dns_type_ == DnsType::kSRV) {
+    const DomainName& target = absl::get<SrvRecordRdata>(rdata_).target();
+    ss << ", target: '" << target.ToString() << "'";
+  } else if (dns_type_ == DnsType::kNSEC) {
+    const auto& nsec_rdata = absl::get<NsecRecordRdata>(rdata_);
+    std::vector<DnsType> types = nsec_rdata.types();
+    ss << ", representing [";
+    if (!types.empty()) {
+      auto it = types.begin();
+      ss << *it++;
+      while (it != types.end()) {
+        ss << ", " << *it++;
+      }
+      ss << "]";
+    }
+  }
+
+  return ss.str();
 }
 
 MdnsRecord CreateAddressRecord(DomainName name, const IPAddress& address) {
