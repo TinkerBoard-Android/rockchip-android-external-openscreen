@@ -4,6 +4,7 @@
 
 #include "discovery/mdns/mdns_records.h"
 
+#include "absl/hash/hash_testing.h"
 #include "discovery/mdns/mdns_reader.h"
 #include "discovery/mdns/mdns_writer.h"
 #include "discovery/mdns/testing/mdns_test_util.h"
@@ -102,6 +103,9 @@ TEST(MdnsDomainNameTest, Compare) {
 
   EXPECT_FALSE(fourth < fifth);
   EXPECT_FALSE(fifth < fourth);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {first, second, third, fourth, fifth}));
 }
 
 TEST(MdnsDomainNameTest, CopyAndMove) {
@@ -147,6 +151,9 @@ TEST(MdnsRawRecordRdataTest, Compare) {
 
   EXPECT_EQ(rdata1, rdata2);
   EXPECT_NE(rdata1, rdata3);
+
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly({rdata1, rdata2, rdata3}));
 }
 
 TEST(MdnsRawRecordRdataTest, CopyAndMove) {
@@ -185,6 +192,9 @@ TEST(MdnsSrvRecordRdataTest, Compare) {
   EXPECT_NE(rdata1, rdata4);
   EXPECT_NE(rdata1, rdata5);
   EXPECT_NE(rdata1, rdata6);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {rdata1, rdata2, rdata3, rdata4, rdata5, rdata6}));
 }
 
 TEST(MdnsSrvRecordRdataTest, CopyAndMove) {
@@ -208,6 +218,9 @@ TEST(MdnsARecordRdataTest, Compare) {
 
   EXPECT_EQ(rdata1, rdata2);
   EXPECT_NE(rdata1, rdata3);
+
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly({rdata1, rdata2, rdata3}));
 }
 
 TEST(MdnsARecordRdataTest, CopyAndMove) {
@@ -249,6 +262,9 @@ TEST(MdnsAAAARecordRdataTest, Compare) {
 
   EXPECT_EQ(rdata1, rdata2);
   EXPECT_NE(rdata1, rdata3);
+
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly({rdata1, rdata2, rdata3}));
 }
 
 TEST(MdnsAAAARecordRdataTest, CopyAndMove) {
@@ -275,6 +291,9 @@ TEST(MdnsPtrRecordRdataTest, Compare) {
 
   EXPECT_EQ(rdata1, rdata2);
   EXPECT_NE(rdata1, rdata3);
+
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly({rdata1, rdata2, rdata3}));
 }
 
 TEST(MdnsPtrRecordRdataTest, CopyAndMove) {
@@ -300,6 +319,9 @@ TEST(MdnsTxtRecordRdataTest, Compare) {
   EXPECT_EQ(rdata1, rdata2);
   EXPECT_NE(rdata1, rdata3);
   EXPECT_NE(rdata1, rdata4);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {rdata1, rdata2, rdata3, rdata4}));
 }
 
 TEST(MdnsTxtRecordRdataTest, CopyAndMove) {
@@ -428,6 +450,9 @@ TEST(MdnsNsecRecordRdataTest, Compare) {
   EXPECT_NE(rdata1, rdata3);
   EXPECT_NE(rdata1, rdata4);
   EXPECT_NE(rdata3, rdata4);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {rdata1, rdata2, rdata3, rdata4}));
 }
 
 TEST(MdnsNsecRecordRdataTest, CopyAndMove) {
@@ -489,6 +514,9 @@ TEST(MdnsRecordTest, Compare) {
   EXPECT_NE(record1, record5);
   EXPECT_NE(record1, record6);
   EXPECT_NE(record1, record7);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {record1, record2, record3, record4, record5, record6, record7}));
 }
 
 TEST(MdnsRecordTest, CopyAndMove) {
@@ -531,6 +559,9 @@ TEST(MdnsQuestionTest, Compare) {
   EXPECT_NE(question1, question3);
   EXPECT_NE(question1, question4);
   EXPECT_NE(question1, question5);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {question1, question2, question3, question4, question5}));
 }
 
 TEST(MdnsQuestionTest, CopyAndMove) {
@@ -656,6 +687,10 @@ TEST(MdnsMessageTest, Compare) {
   EXPECT_NE(message1, message6);
   EXPECT_NE(message1, message7);
   EXPECT_NE(message1, message8);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {message1, message2, message3, message4, message5, message6, message7,
+       message8}));
 }
 
 TEST(MdnsMessageTest, CopyAndMove) {

@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/ascii.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 #include "discovery/mdns/public/mdns_constants.h"
@@ -86,7 +87,11 @@ class DomainName {
 
   template <typename H>
   friend H AbslHashValue(H h, const DomainName& domain_name) {
-    return H::combine(std::move(h), domain_name.labels_);
+    std::vector<std::string> labels_clone = domain_name.labels_;
+    for (auto& label : labels_clone) {
+      absl::AsciiStrToLower(&label);
+    }
+    return H::combine(std::move(h), std::move(labels_clone));
   }
 
  private:
@@ -188,7 +193,8 @@ class ARecordRdata {
 
   template <typename H>
   friend H AbslHashValue(H h, const ARecordRdata& rdata) {
-    return H::combine(std::move(h), rdata.ipv4_address_.bytes());
+    const auto& bytes = rdata.ipv4_address_.bytes();
+    return H::combine_contiguous(std::move(h), bytes, 4);
   }
 
  private:
@@ -217,7 +223,8 @@ class AAAARecordRdata {
 
   template <typename H>
   friend H AbslHashValue(H h, const AAAARecordRdata& rdata) {
-    return H::combine(std::move(h), rdata.ipv6_address_.bytes());
+    const auto& bytes = rdata.ipv6_address_.bytes();
+    return H::combine_contiguous(std::move(h), bytes, 16);
   }
 
  private:
@@ -408,8 +415,8 @@ class MdnsRecord {
   template <typename H>
   friend H AbslHashValue(H h, const MdnsRecord& record) {
     return H::combine(std::move(h), record.name_, record.dns_type_,
-                      record.dns_class_, record.record_type_, record.ttl_,
-                      record.rdata_);
+                      record.dns_class_, record.record_type_,
+                      record.ttl_.count(), record.rdata_);
   }
 
  private:

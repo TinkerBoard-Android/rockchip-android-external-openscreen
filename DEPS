@@ -184,6 +184,7 @@ include_rules = [
   '+absl/algorithm/container.h',
   '+absl/base/thread_annotations.h',
   '+absl/hash/hash.h',
+  '+absl/hash/hash_testing.h',
   '+absl/strings/ascii.h',
   '+absl/strings/match.h',
   '+absl/strings/numbers.h',
