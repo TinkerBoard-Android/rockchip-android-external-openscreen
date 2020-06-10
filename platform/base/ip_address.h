@@ -22,10 +22,10 @@ class IPAddress {
     kV6,
   };
 
-  static const IPAddress kAnyV4;
-  static const IPAddress kAnyV6;
-  static const IPAddress kV4LoopbackAddress;
-  static const IPAddress kV6LoopbackAddress;
+  static const IPAddress kAnyV4();
+  static const IPAddress kAnyV6();
+  static const IPAddress kV4LoopbackAddress();
+  static const IPAddress kV6LoopbackAddress();
   static constexpr size_t kV4Size = 4;
   static constexpr size_t kV6Size = 16;
 
@@ -100,8 +100,8 @@ struct IPEndpoint {
   uint16_t port = 0;
 
   // Used with various socket types to indicate "any" address.
-  static const IPEndpoint kAnyV4;
-  static const IPEndpoint kAnyV6;
+  static const IPEndpoint kAnyV4();
+  static const IPEndpoint kAnyV6();
   explicit operator bool() const;
 
   // Parses a text representation of an IPv4/IPv6 address and port (e.g.

@@ -329,7 +329,7 @@ class LoopingFileSender final : public SimulatedAudioCapturer::Client,
 #endif  // defined(CAST_STANDALONE_SENDER_HAVE_EXTERNAL_LIBS)
 
 IPEndpoint GetDefaultEndpoint() {
-  return IPEndpoint{IPAddress::kV4LoopbackAddress, kDefaultCastStreamingPort};
+  return IPEndpoint{IPAddress::kV4LoopbackAddress(), kDefaultCastStreamingPort};
 }
 
 void LogUsage(const char* argv0) {

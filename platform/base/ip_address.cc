@@ -19,16 +19,24 @@
 namespace openscreen {
 
 // static
-const IPAddress IPAddress::kAnyV4{0, 0, 0, 0};
+const IPAddress IPAddress::kAnyV4() {
+  return IPAddress{0, 0, 0, 0};
+}
 
 // static
-const IPAddress IPAddress::kAnyV6{0, 0, 0, 0, 0, 0, 0, 0};
+const IPAddress IPAddress::kAnyV6() {
+  return IPAddress{0, 0, 0, 0, 0, 0, 0, 0};
+}
 
 // static
-const IPAddress IPAddress::kV4LoopbackAddress{127, 0, 0, 1};
+const IPAddress IPAddress::kV4LoopbackAddress() {
+  return IPAddress{127, 0, 0, 1};
+}
 
 // static
-const IPAddress IPAddress::kV6LoopbackAddress{0, 0, 0, 0, 0, 0, 0, 1};
+const IPAddress IPAddress::kV6LoopbackAddress() {
+  return IPAddress{0, 0, 0, 0, 0, 0, 0, 1};
+}
 
 IPAddress::IPAddress(Version version, const uint8_t* b) : version_(version) {
   if (version_ == Version::kV4) {
@@ -221,10 +229,14 @@ ErrorOr<IPAddress> IPAddress::Parse(const std::string& s) {
 }
 
 // static
-const IPEndpoint IPEndpoint::kAnyV4{IPAddress::kAnyV4, 0};
+const IPEndpoint IPEndpoint::kAnyV4() {
+  return IPEndpoint{};
+}
 
 // static
-const IPEndpoint IPEndpoint::kAnyV6{IPAddress::kAnyV6, 0};
+const IPEndpoint IPEndpoint::kAnyV6() {
+  return IPEndpoint{IPAddress::kAnyV6(), 0};
+}
 
 IPEndpoint::operator bool() const {
   return address || port;

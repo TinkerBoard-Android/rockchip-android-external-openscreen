@@ -39,7 +39,7 @@ class Environment : public UdpSocket::Client {
   // socket is bound on, they may omit that argument.
   Environment(ClockNowFunctionPtr now_function,
               TaskRunner* task_runner,
-              const IPEndpoint& local_endpoint = IPEndpoint::kAnyV6);
+              const IPEndpoint& local_endpoint = IPEndpoint::kAnyV6());
 
   ~Environment() override;
 
