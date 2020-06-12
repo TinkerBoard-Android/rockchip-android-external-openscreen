@@ -27,21 +27,18 @@ ErrorOr<DnsSdInstanceEndpoint> CreateEndpoint(
   }
 
   InstanceKey instance_id(domain);
-  if (a.has_value() && aaaa.has_value()) {
-    return DnsSdInstanceEndpoint(
-        instance_id.instance_id(), instance_id.service_id(),
-        instance_id.domain_id(), std::move(txt_or_error.value()),
-        {a.value().ipv4_address(), srv.port()},
-        {aaaa.value().ipv6_address(), srv.port()}, network_interface);
-  } else {
-    IPEndpoint ep = a.has_value()
-                        ? IPEndpoint{a.value().ipv4_address(), srv.port()}
-                        : IPEndpoint{aaaa.value().ipv6_address(), srv.port()};
-    return DnsSdInstanceEndpoint(
-        instance_id.instance_id(), instance_id.service_id(),
-        instance_id.domain_id(), std::move(txt_or_error.value()), std::move(ep),
-        network_interface);
+  std::vector<IPEndpoint> endpoints;
+  if (a.has_value()) {
+    endpoints.push_back({a.value().ipv4_address(), srv.port()});
   }
+  if (aaaa.has_value()) {
+    endpoints.push_back({aaaa.value().ipv6_address(), srv.port()});
+  }
+
+  return DnsSdInstanceEndpoint(
+      instance_id.instance_id(), instance_id.service_id(),
+      instance_id.domain_id(), std::move(txt_or_error.value()),
+      network_interface, std::move(endpoints));
 }
 
 }  // namespace

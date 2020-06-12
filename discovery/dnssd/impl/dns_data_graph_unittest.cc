@@ -9,9 +9,31 @@
 #include "discovery/mdns/testing/mdns_test_util.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "platform/base/ip_address.h"
 
 namespace openscreen {
 namespace discovery {
+namespace {
+
+IPAddress GetAddressV4(const DnsSdInstanceEndpoint endpoint) {
+  for (const IPAddress& address : endpoint.addresses()) {
+    if (address.IsV4()) {
+      return address;
+    }
+  }
+  return IPAddress{};
+}
+
+IPAddress GetAddressV6(const DnsSdInstanceEndpoint endpoint) {
+  for (const IPAddress& address : endpoint.addresses()) {
+    if (address.IsV6()) {
+      return address;
+    }
+  }
+  return IPAddress{};
+}
+
+}  // namespace
 
 using testing::_;
 using testing::Invoke;
@@ -234,7 +256,9 @@ TEST_F(DnsDataGraphTests, UpdateEndpointsWorksAsExpected) {
   endpoint_or_error = std::move(endpoints[0]);
   ASSERT_TRUE(endpoint_or_error.is_value());
   DnsSdInstanceEndpoint endpoint2 = std::move(endpoint_or_error.value());
-  EXPECT_NE(endpoint.address_v4(), endpoint2.address_v6());
+  ASSERT_EQ(endpoint.addresses().size(), size_t{1});
+  ASSERT_EQ(endpoint.addresses().size(), endpoint2.addresses().size());
+  EXPECT_NE(endpoint.addresses()[0], endpoint2.addresses()[0]);
   EXPECT_EQ(endpoint.instance_id(), endpoint2.instance_id());
   EXPECT_EQ(endpoint.service_id(), endpoint2.service_id());
   EXPECT_EQ(endpoint.domain_id(), endpoint2.domain_id());
@@ -265,9 +289,9 @@ TEST_F(DnsDataGraphTests, CreateEndpointsGeneratesCorrectRecords) {
   ErrorOr<DnsSdInstanceEndpoint> endpoint_or_error = std::move(endpoints[0]);
   ASSERT_TRUE(endpoint_or_error.is_value());
   DnsSdInstanceEndpoint endpoint_a = std::move(endpoint_or_error.value());
-  EXPECT_TRUE(endpoint_a.address_v4());
-  EXPECT_FALSE(endpoint_a.address_v6());
-  EXPECT_EQ(endpoint_a.address_v4(), kFakeARecordAddress);
+  EXPECT_TRUE(GetAddressV4(endpoint_a));
+  EXPECT_FALSE(GetAddressV6(endpoint_a));
+  EXPECT_EQ(GetAddressV4(endpoint_a), kFakeARecordAddress);
   ExpectDomainEqual(endpoint_a, primary_domain_);
   EXPECT_EQ(endpoint_a.port(), kFakeSrvRecordPort);
 
@@ -278,10 +302,10 @@ TEST_F(DnsDataGraphTests, CreateEndpointsGeneratesCorrectRecords) {
   endpoint_or_error = std::move(endpoints[0]);
   ASSERT_TRUE(endpoint_or_error.is_value());
   DnsSdInstanceEndpoint endpoint_a_aaaa = std::move(endpoint_or_error.value());
-  ASSERT_TRUE(endpoint_a_aaaa.address_v4());
-  ASSERT_TRUE(endpoint_a_aaaa.address_v6());
-  EXPECT_EQ(endpoint_a_aaaa.address_v4(), kFakeARecordAddress);
-  EXPECT_EQ(endpoint_a_aaaa.address_v6(), kFakeAAAARecordAddress);
+  ASSERT_TRUE(GetAddressV4(endpoint_a_aaaa));
+  ASSERT_TRUE(GetAddressV6(endpoint_a_aaaa));
+  EXPECT_EQ(GetAddressV4(endpoint_a_aaaa), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(endpoint_a_aaaa), kFakeAAAARecordAddress);
   EXPECT_EQ(static_cast<DnsSdInstance>(endpoint_a),
             static_cast<DnsSdInstance>(endpoint_a_aaaa));
 
@@ -293,9 +317,9 @@ TEST_F(DnsDataGraphTests, CreateEndpointsGeneratesCorrectRecords) {
   endpoint_or_error = std::move(endpoints[0]);
   ASSERT_TRUE(endpoint_or_error.is_value());
   DnsSdInstanceEndpoint endpoint_aaaa = std::move(endpoint_or_error.value());
-  EXPECT_FALSE(endpoint_aaaa.address_v4());
-  ASSERT_TRUE(endpoint_aaaa.address_v6());
-  EXPECT_EQ(endpoint_aaaa.address_v6(), kFakeAAAARecordAddress);
+  EXPECT_FALSE(GetAddressV4(endpoint_aaaa));
+  ASSERT_TRUE(GetAddressV6(endpoint_aaaa));
+  EXPECT_EQ(GetAddressV6(endpoint_aaaa), kFakeAAAARecordAddress);
   EXPECT_EQ(static_cast<DnsSdInstance>(endpoint_a),
             static_cast<DnsSdInstance>(endpoint_aaaa));
 
@@ -325,8 +349,8 @@ TEST_F(DnsDataGraphTests, CreateEndpointsHandlesSelfLoops) {
   ASSERT_TRUE(endpoints[0].is_value());
   DnsSdInstanceEndpoint endpoint = std::move(endpoints[0].value());
 
-  EXPECT_EQ(endpoint.address_v4(), kFakeARecordAddress);
-  EXPECT_EQ(endpoint.address_v6(), kFakeAAAARecordAddress);
+  EXPECT_EQ(GetAddressV4(endpoint), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(endpoint), kFakeAAAARecordAddress);
   ExpectDomainEqual(endpoint, primary_domain_);
   EXPECT_EQ(endpoint.port(), kFakeSrvRecordPort);
 
@@ -334,7 +358,15 @@ TEST_F(DnsDataGraphTests, CreateEndpointsHandlesSelfLoops) {
       graph_.CreateEndpoints(DnsDataGraph::GetDomainGroup(ptr), ptr_domain_);
   ASSERT_EQ(endpoints2.size(), size_t{1});
   ASSERT_TRUE(endpoints2[0].is_value());
-  DnsSdInstanceEndpoint endpoint2 = std::move(endpoints[0].value());
+  DnsSdInstanceEndpoint endpoint2 = std::move(endpoints2[0].value());
+
+  EXPECT_EQ(GetAddressV4(endpoint2), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(endpoint2), kFakeAAAARecordAddress);
+  ExpectDomainEqual(endpoint2, primary_domain_);
+  EXPECT_EQ(endpoint2.port(), kFakeSrvRecordPort);
+
+  EXPECT_EQ(static_cast<DnsSdInstance>(endpoint),
+            static_cast<DnsSdInstance>(endpoint2));
   EXPECT_EQ(endpoint, endpoint2);
 }
 
@@ -375,13 +407,13 @@ TEST_F(DnsDataGraphTests, CreateEndpointsWithMultipleParents) {
     endpoint_1 = &endpoint_b;
   }
 
-  EXPECT_EQ(endpoint_1->address_v4(), kFakeARecordAddress);
-  EXPECT_EQ(endpoint_1->address_v6(), kFakeAAAARecordAddress);
+  EXPECT_EQ(GetAddressV4(*endpoint_1), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(*endpoint_1), kFakeAAAARecordAddress);
   EXPECT_EQ(endpoint_1->port(), kFakeSrvRecordPort);
   ExpectDomainEqual(*endpoint_1, primary_domain_);
 
-  EXPECT_EQ(endpoint_2->address_v4(), kFakeARecordAddress);
-  EXPECT_EQ(endpoint_2->address_v6(), kFakeAAAARecordAddress);
+  EXPECT_EQ(GetAddressV4(*endpoint_2), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(*endpoint_2), kFakeAAAARecordAddress);
   EXPECT_EQ(endpoint_2->port(), kFakeSrvRecordPort);
   ExpectDomainEqual(*endpoint_2, secondary_domain_);
 }
@@ -416,8 +448,8 @@ TEST_F(DnsDataGraphTests, FailedConversionOnlyFailsSingleEndpointCreation) {
   DnsSdInstanceEndpoint endpoint = endpoints[0].is_value()
                                        ? std::move(endpoints[0].value())
                                        : std::move(endpoints[1].value());
-  EXPECT_EQ(endpoint.address_v4(), kFakeARecordAddress);
-  EXPECT_EQ(endpoint.address_v6(), kFakeAAAARecordAddress);
+  EXPECT_EQ(GetAddressV4(endpoint), kFakeARecordAddress);
+  EXPECT_EQ(GetAddressV6(endpoint), kFakeAAAARecordAddress);
   EXPECT_EQ(endpoint.port(), kFakeSrvRecordPort);
   ExpectDomainEqual(endpoint, primary_domain_);
 }

@@ -4,6 +4,9 @@
 
 #include "discovery/dnssd/impl/dns_data.h"
 
+#include <utility>
+#include <vector>
+
 #include "absl/types/optional.h"
 #include "discovery/dnssd/impl/conversion_layer.h"
 #include "discovery/mdns/mdns_records.h"
@@ -71,23 +74,17 @@ ErrorOr<DnsSdInstanceEndpoint> DnsData::CreateEndpoint() {
     return txt_or_error.error();
   }
 
-  if (a_.has_value() && aaaa_.has_value()) {
-    return DnsSdInstanceEndpoint(
-        instance_id_.instance_id(), instance_id_.service_id(),
-        instance_id_.domain_id(), std::move(txt_or_error.value()),
-        {a_.value().ipv4_address(), srv_.value().port()},
-        {aaaa_.value().ipv6_address(), srv_.value().port()},
-        network_interface_);
-  } else {
-    IPEndpoint ep =
-        a_.has_value()
-            ? IPEndpoint{a_.value().ipv4_address(), srv_.value().port()}
-            : IPEndpoint{aaaa_.value().ipv6_address(), srv_.value().port()};
-    return DnsSdInstanceEndpoint(
-        instance_id_.instance_id(), instance_id_.service_id(),
-        instance_id_.domain_id(), std::move(txt_or_error.value()),
-        std::move(ep), network_interface_);
+  std::vector<IPEndpoint> endpoints;
+  if (a_.has_value()) {
+    endpoints.push_back({a_.value().ipv4_address(), srv_.value().port()});
   }
+  if (aaaa_.has_value()) {
+    endpoints.push_back({aaaa_.value().ipv6_address(), srv_.value().port()});
+  }
+  return DnsSdInstanceEndpoint(
+      instance_id_.instance_id(), instance_id_.service_id(),
+      instance_id_.domain_id(), std::move(txt_or_error.value()),
+      network_interface_, std::move(endpoints));
 }
 
 Error DnsData::ApplyDataRecordChange(const MdnsRecord& record,

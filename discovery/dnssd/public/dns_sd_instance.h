@@ -26,7 +26,14 @@ class DnsSdInstance {
                 std::string domain_id,
                 DnsSdTxtRecord txt,
                 uint16_t port);
+
+  DnsSdInstance(const DnsSdInstance& other);
+  DnsSdInstance(DnsSdInstance&& other);
+
   virtual ~DnsSdInstance();
+
+  DnsSdInstance& operator=(const DnsSdInstance& rhs);
+  DnsSdInstance& operator=(DnsSdInstance&& rhs);
 
   // Returns the instance name for this DNS-SD record.
   const std::string& instance_id() const { return instance_id_; }
@@ -60,11 +67,11 @@ inline bool operator>(const DnsSdInstance& lhs, const DnsSdInstance& rhs) {
 }
 
 inline bool operator<=(const DnsSdInstance& lhs, const DnsSdInstance& rhs) {
-  return !(rhs > lhs);
+  return !(lhs > rhs);
 }
 
 inline bool operator>=(const DnsSdInstance& lhs, const DnsSdInstance& rhs) {
-  return !(rhs < lhs);
+  return !(lhs < rhs);
 }
 
 inline bool operator==(const DnsSdInstance& lhs, const DnsSdInstance& rhs) {

@@ -5,6 +5,7 @@
 #include "discovery/dnssd/public/dns_sd_instance.h"
 
 #include <cctype>
+#include <utility>
 
 #include "util/osp_logging.h"
 
@@ -62,7 +63,15 @@ DnsSdInstance::DnsSdInstance(std::string instance_id,
   OSP_DCHECK(IsDomainValid(domain_id_));
 }
 
+DnsSdInstance::DnsSdInstance(const DnsSdInstance& other) = default;
+
+DnsSdInstance::DnsSdInstance(DnsSdInstance&& other) = default;
+
 DnsSdInstance::~DnsSdInstance() = default;
+
+DnsSdInstance& DnsSdInstance::operator=(const DnsSdInstance& rhs) = default;
+
+DnsSdInstance& DnsSdInstance::operator=(DnsSdInstance&& rhs) = default;
 
 // static
 bool IsInstanceValid(const std::string& instance) {

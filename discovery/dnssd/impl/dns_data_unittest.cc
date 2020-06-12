@@ -9,9 +9,31 @@
 #include "discovery/mdns/testing/mdns_test_util.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "platform/base/ip_address.h"
 
 namespace openscreen {
 namespace discovery {
+namespace {
+
+IPAddress GetAddressV4(const DnsSdInstanceEndpoint endpoint) {
+  for (const IPAddress& address : endpoint.addresses()) {
+    if (address.IsV4()) {
+      return address;
+    }
+  }
+  return IPAddress{};
+}
+
+IPAddress GetAddressV6(const DnsSdInstanceEndpoint endpoint) {
+  for (const IPAddress& address : endpoint.addresses()) {
+    if (address.IsV6()) {
+      return address;
+    }
+  }
+  return IPAddress{};
+}
+
+}  // namespace
 
 class DnsDataTesting : public DnsData {
  public:
@@ -112,15 +134,14 @@ TEST(DnsSdDnsDataTests, TestConvertDnsDataCorrectly) {
   ASSERT_TRUE(result.is_value());
 
   DnsSdInstanceEndpoint record = result.value();
-  ASSERT_TRUE(record.endpoint_v4());
-  ASSERT_TRUE(record.endpoint_v6());
+  ASSERT_TRUE(GetAddressV4(record));
+  ASSERT_TRUE(GetAddressV6(record));
   EXPECT_EQ(record.instance_id(), kInstanceName);
   EXPECT_EQ(record.service_id(), kServiceName);
   EXPECT_EQ(record.domain_id(), kDomainName);
-  EXPECT_EQ(record.endpoint_v4().port, kServicePort);
-  EXPECT_EQ(record.endpoint_v4().address, IPAddress(kV4AddressOctets));
-  EXPECT_EQ(record.endpoint_v6().port, kServicePort);
-  EXPECT_EQ(record.endpoint_v6().address, IPAddress(kV6AddressHextets));
+  EXPECT_EQ(record.port(), kServicePort);
+  EXPECT_EQ(GetAddressV4(record), IPAddress(kV4AddressOctets));
+  EXPECT_EQ(GetAddressV6(record), IPAddress(kV6AddressHextets));
   EXPECT_FALSE(record.txt().IsEmpty());
 }
 
@@ -158,11 +179,10 @@ TEST(DnsSdDnsDataTests, TestConvertDnsDataOneAddress) {
   ASSERT_TRUE(result.is_value());
 
   DnsSdInstanceEndpoint record = result.value();
-  EXPECT_FALSE(record.endpoint_v6().address);
-  EXPECT_FALSE(record.endpoint_v6());
-  ASSERT_TRUE(record.endpoint_v4());
-  EXPECT_EQ(record.endpoint_v4().port, kServicePort);
-  EXPECT_EQ(record.endpoint_v4().address, IPAddress(kV4AddressOctets));
+  EXPECT_FALSE(GetAddressV6(record));
+  ASSERT_TRUE(GetAddressV4(record));
+  EXPECT_EQ(record.port(), kServicePort);
+  EXPECT_EQ(GetAddressV4(record), IPAddress(kV4AddressOctets));
 
   // Address v6.
   data = CreateFullyPopulatedData();
@@ -171,11 +191,10 @@ TEST(DnsSdDnsDataTests, TestConvertDnsDataOneAddress) {
   ASSERT_TRUE(result.is_value());
 
   record = result.value();
-  EXPECT_FALSE(record.endpoint_v4().address);
-  EXPECT_FALSE(record.endpoint_v4());
-  ASSERT_TRUE(record.endpoint_v6());
-  EXPECT_EQ(record.endpoint_v6().port, kServicePort);
-  EXPECT_EQ(record.endpoint_v6().address, IPAddress(kV6AddressHextets));
+  EXPECT_FALSE(GetAddressV4(record));
+  ASSERT_TRUE(GetAddressV6(record));
+  EXPECT_EQ(record.port(), kServicePort);
+  EXPECT_EQ(GetAddressV6(record), IPAddress(kV6AddressHextets));
 }
 
 TEST(DnsSdDnsDataTests, TestConvertDnsDataBadTxt) {
