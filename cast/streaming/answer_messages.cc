@@ -354,10 +354,10 @@ bool DisplayDescription::IsValid() const {
     return false;
   }
   // Sender behavior is undefined if the aspect ratio is fixed but no
-  // dimensions are provided.
+  // dimensions or aspect ratio are provided.
   if (aspect_ratio_constraint.has_value() &&
       (aspect_ratio_constraint.value() == AspectRatioConstraint::kFixed) &&
-      !dimensions.has_value()) {
+      !dimensions.has_value() && !aspect_ratio.has_value()) {
     return false;
   }
   return aspect_ratio.has_value() || dimensions.has_value() ||

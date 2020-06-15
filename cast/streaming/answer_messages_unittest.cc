@@ -581,6 +581,10 @@ TEST(AnswerMessagesTest, DisplayDescriptionParseAndValidate) {
   Json::Value invalid_dimensions;
   invalid_dimensions["dimensions"] = dimensions_invalid;
 
+  Json::Value aspect_ratio_and_constraint;
+  aspect_ratio_and_constraint["scaling"] = "sender";
+  aspect_ratio_and_constraint["aspectRatio"] = "4:3";
+
   DisplayDescription out;
   ASSERT_TRUE(DisplayDescription::ParseAndValidate(valid_scaling, &out));
   ASSERT_TRUE(out.aspect_ratio_constraint.has_value());
@@ -598,6 +602,10 @@ TEST(AnswerMessagesTest, DisplayDescriptionParseAndValidate) {
   EXPECT_EQ((SimpleFraction{30, 1}), out.dimensions->frame_rate);
 
   EXPECT_FALSE(DisplayDescription::ParseAndValidate(invalid_dimensions, &out));
+
+  ASSERT_TRUE(
+      DisplayDescription::ParseAndValidate(aspect_ratio_and_constraint, &out));
+  EXPECT_EQ(AspectRatioConstraint::kFixed, out.aspect_ratio_constraint.value());
 }
 
 TEST(AnswerMessagesTest, DisplayDescriptionIsValid) {
@@ -630,6 +638,9 @@ TEST(AnswerMessagesTest, DisplayDescriptionIsValid) {
       has_aspect_ratio_constraint;
   has_constraint_and_dimensions.dimensions =
       absl::optional<Dimensions>(kValidDimensions);
+
+  DisplayDescription has_constraint_and_ratio = has_aspect_ratio_constraint;
+  has_constraint_and_ratio.aspect_ratio = AspectRatio{4, 3};
 
   EXPECT_FALSE(kInvalidEmptyDescription.IsValid());
   EXPECT_TRUE(has_valid_dimensions.IsValid());
