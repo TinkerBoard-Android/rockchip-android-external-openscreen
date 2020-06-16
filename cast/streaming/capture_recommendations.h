@@ -81,6 +81,7 @@ struct Audio {
 struct Resolution {
   bool operator==(const Resolution& other) const;
   bool operator<(const Resolution& other) const;
+  bool operator<=(const Resolution& other) const;
   void set_minimum(const Resolution& other);
 
   // The effective bit rate is the predicted average bit rate based on the

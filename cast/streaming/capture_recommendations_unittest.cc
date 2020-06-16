@@ -255,6 +255,18 @@ TEST(CaptureRecommendationsTest, HandlesTooSmallScreen) {
   EXPECT_EQ(kExpected, GetRecommendations(answer));
 }
 
+TEST(CaptureRecommendationsTest, HandlesMinimumSizeScreen) {
+  const Recommendations kExpected{
+      Audio{BitRateLimits{32000, 50000}, milliseconds(1000), 2, 22000},
+      Video{BitRateLimits{300000, 1000000}, Resolution{320, 240, 30},
+            Resolution{320, 240, 30}, true, milliseconds(1000), 60000}};
+  Answer answer;
+  answer.constraints = kValidConstraintsLowEnd;
+  answer.constraints->video.max_dimensions =
+      Dimensions{320, 240, SimpleFraction{30, 1}};
+  EXPECT_EQ(kExpected, GetRecommendations(answer));
+}
+
 TEST(CaptureRecommendationsTest, UsesIntersectionOfDisplayAndConstraints) {
   const Recommendations kExpected{
       Audio{BitRateLimits{96000, 500000}, milliseconds(6000), 5, 96100},

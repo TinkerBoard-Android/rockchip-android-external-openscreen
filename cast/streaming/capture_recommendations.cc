@@ -103,11 +103,12 @@ void ApplyConstraints(const Constraints& constraints,
                     std::min(constraints.video.max_bit_rate,
                              recommendations->video.bit_rate_limits.maximum)};
   Resolution max = ToResolution(constraints.video.max_dimensions);
-  if (kDefaultMinResolution < max && max < recommendations->video.maximum) {
-    recommendations->video.maximum = std::move(max);
-  } else if (max < kDefaultMinResolution) {
+  if (max <= kDefaultMinResolution) {
     recommendations->video.maximum = kDefaultMinResolution;
+  } else if (max < recommendations->video.maximum) {
+    recommendations->video.maximum = std::move(max);
   }
+  // Implicit else: maximum = kDefaultMaxResolution.
 
   if (constraints.video.min_dimensions) {
     Resolution min = ToResolution(constraints.video.min_dimensions.value());
@@ -136,6 +137,10 @@ bool Resolution::operator==(const Resolution& other) const {
 
 bool Resolution::operator<(const Resolution& other) const {
   return effective_bit_rate() < other.effective_bit_rate();
+}
+
+bool Resolution::operator<=(const Resolution& other) const {
+  return (*this == other) || (*this < other);
 }
 
 void Resolution::set_minimum(const Resolution& other) {
