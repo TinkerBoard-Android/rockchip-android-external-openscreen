@@ -21,11 +21,28 @@ DnsSdInstanceEndpoint::DnsSdInstanceEndpoint(
     DnsSdTxtRecord txt,
     NetworkInterfaceIndex network_interface,
     std::vector<IPEndpoint> endpoints)
+    : DnsSdInstanceEndpoint(std::move(instance_id),
+                            std::move(service_id),
+                            std::move(domain_id),
+                            std::move(txt),
+                            network_interface,
+                            std::move(endpoints),
+                            std::vector<Subtype>{}) {}
+
+DnsSdInstanceEndpoint::DnsSdInstanceEndpoint(
+    std::string instance_id,
+    std::string service_id,
+    std::string domain_id,
+    DnsSdTxtRecord txt,
+    NetworkInterfaceIndex network_interface,
+    std::vector<IPEndpoint> endpoints,
+    std::vector<Subtype> subtypes)
     : DnsSdInstance(std::move(instance_id),
                     std::move(service_id),
                     std::move(domain_id),
                     std::move(txt),
-                    endpoints.empty() ? 0 : endpoints[0].port),
+                    endpoints.empty() ? 0 : endpoints[0].port,
+                    std::move(subtypes)),
       endpoints_(std::move(endpoints)),
       network_interface_(network_interface) {
   InitializeEndpoints();
