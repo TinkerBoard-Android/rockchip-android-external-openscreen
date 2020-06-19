@@ -43,20 +43,53 @@ ErrorOr<DnsSdInstanceEndpoint> CreateEndpoint(
 
 }  // namespace
 
-DnsDataGraph::Node::Node(DomainName name, DnsDataGraph* graph)
+// static
+std::unique_ptr<DnsDataGraph> DnsDataGraph::Create(
+    NetworkInterfaceIndex network_interface) {
+  return std::make_unique<DnsDataGraphImpl>(network_interface);
+}
+
+// static
+DnsDataGraphImpl::DomainGroup DnsDataGraph::GetDomainGroup(DnsType type) {
+  switch (type) {
+    case DnsType::kA:
+    case DnsType::kAAAA:
+      return DnsDataGraphImpl::DomainGroup::kAddress;
+    case DnsType::kSRV:
+    case DnsType::kTXT:
+      return DnsDataGraphImpl::DomainGroup::kSrvAndTxt;
+    case DnsType::kPTR:
+      return DnsDataGraphImpl::DomainGroup::kPtr;
+    default:
+      OSP_NOTREACHED();
+      return DnsDataGraphImpl::DomainGroup::kNone;
+  }
+}
+
+// static
+DnsDataGraphImpl::DomainGroup DnsDataGraph::GetDomainGroup(
+    const MdnsRecord record) {
+  return GetDomainGroup(record.dns_type());
+}
+
+DnsDataGraph::~DnsDataGraph() = default;
+
+DnsDataGraphImpl::Node::Node(DomainName name, DnsDataGraphImpl* graph)
     : name_(std::move(name)), graph_(graph) {
   OSP_DCHECK(graph_);
 
   graph_->on_node_creation_(name_);
 }
 
-DnsDataGraph::Node::~Node() {
+DnsDataGraphImpl::Node::~Node() {
   // A node should only be deleted when it has no parents. The only case where
   // a deletion can occur when parents are still extant is during destruction of
   // the holding graph. In that case, the state of the graph no longer matters
   // and all nodes will be deleted, so no need to consider the child pointers.
   if (!graph_->is_dtor_running_) {
-    OSP_DCHECK(parents_.empty());
+    auto it = std::find_if(parents_.begin(), parents_.end(),
+                           [this](Node* parent) { return parent != this; });
+    OSP_DCHECK(it == parents_.end());
 
     // Erase all childrens' parent pointers to this node.
     for (Node* child : children_) {
@@ -68,8 +101,8 @@ DnsDataGraph::Node::~Node() {
   }
 }
 
-Error DnsDataGraph::Node::ApplyDataRecordChange(MdnsRecord record,
-                                                RecordChangedEvent event) {
+Error DnsDataGraphImpl::Node::ApplyDataRecordChange(MdnsRecord record,
+                                                    RecordChangedEvent event) {
   OSP_DCHECK(record.name() == name_);
 
   // The child domain to which the changed record points, or none. This is only
@@ -125,8 +158,8 @@ Error DnsDataGraph::Node::ApplyDataRecordChange(MdnsRecord record,
   return Error::None();
 }
 
-void DnsDataGraph::Node::ApplyChildChange(DomainName child_name,
-                                          RecordChangedEvent event) {
+void DnsDataGraphImpl::Node::ApplyChildChange(DomainName child_name,
+                                              RecordChangedEvent event) {
   if (event == RecordChangedEvent::kCreated) {
     const auto pair =
         graph_->nodes_.emplace(child_name, std::unique_ptr<Node>());
@@ -143,13 +176,13 @@ void DnsDataGraph::Node::ApplyChildChange(DomainName child_name,
   }
 }
 
-void DnsDataGraph::Node::AddChild(Node* child) {
+void DnsDataGraphImpl::Node::AddChild(Node* child) {
   OSP_DCHECK(child);
   children_.push_back(child);
   child->parents_.push_back(this);
 }
 
-void DnsDataGraph::Node::RemoveChild(Node* child) {
+void DnsDataGraphImpl::Node::RemoveChild(Node* child) {
   OSP_DCHECK(child);
 
   auto it = std::find(children_.begin(), children_.end(), child);
@@ -161,84 +194,102 @@ void DnsDataGraph::Node::RemoveChild(Node* child) {
   child->parents_.erase(it);
 
   // If the node has been orphaned, remove it.
-  if (child->parents_.empty() && child != this) {
+  it = std::find_if(child->parents_.begin(), child->parents_.end(),
+                    [child](Node* parent) { return parent != child; });
+  if (it == child->parents_.end()) {
     DomainName child_name = child->name();
-    graph_->nodes_.erase(child_name);
+    const size_t count = graph_->nodes_.erase(child_name);
+    OSP_DCHECK(child == this || count);
   }
 }
 
-std::vector<MdnsRecord>::iterator DnsDataGraph::Node::FindRecord(DnsType type) {
+std::vector<MdnsRecord>::iterator DnsDataGraphImpl::Node::FindRecord(
+    DnsType type) {
   return std::find_if(
       records_.begin(), records_.end(),
       [type](const MdnsRecord& record) { return record.dns_type() == type; });
 }
 
-DnsDataGraph::DnsDataGraph(NetworkInterfaceIndex network_interface)
-    : network_interface_(network_interface) {}
-
-DnsDataGraph::~DnsDataGraph() {
-  is_dtor_running_ = true;
+DnsDataGraphImpl::NodeLifetimeHandler::NodeLifetimeHandler(
+    DomainChangeCallback* callback_ptr,
+    DomainChangeCallback callback)
+    : callback_ptr_(callback_ptr), callback_(callback) {
+  OSP_DCHECK(callback_ptr_);
+  OSP_DCHECK(callback);
+  OSP_DCHECK(*callback_ptr_ == nullptr);
+  *callback_ptr = [this](DomainName domain) {
+    domains_changed.push_back(std::move(domain));
+  };
 }
 
-void DnsDataGraph::StartTracking(const DomainName& domain,
-                                 DomainChangeCallback on_start_tracking) {
-  OSP_DCHECK(on_start_tracking);
-  OSP_DCHECK(!on_node_creation_);
-  OSP_DCHECK(!on_node_deletion_);
-  on_node_creation_ = std::move(on_start_tracking);
+DnsDataGraphImpl::NodeLifetimeHandler::~NodeLifetimeHandler() {
+  *callback_ptr_ = nullptr;
+  for (DomainName& domain : domains_changed) {
+    callback_(domain);
+  }
+}
 
-  auto pair = nodes_.emplace(domain, std::make_unique<Node>(domain, this));
+DnsDataGraphImpl::ScopedCallbackHandler
+DnsDataGraphImpl::GetScopedCreationHandler(
+    DomainChangeCallback creation_callback) {
+  return std::make_unique<NodeLifetimeHandler>(&on_node_creation_,
+                                               std::move(creation_callback));
+}
+
+DnsDataGraphImpl::ScopedCallbackHandler
+DnsDataGraphImpl::GetScopedDeletionHandler(
+    DomainChangeCallback deletion_callback) {
+  return std::make_unique<NodeLifetimeHandler>(&on_node_deletion_,
+                                               std::move(deletion_callback));
+}
+
+void DnsDataGraphImpl::StartTracking(const DomainName& domain,
+                                     DomainChangeCallback on_start_tracking) {
+  ScopedCallbackHandler creation_handler =
+      GetScopedCreationHandler(std::move(on_start_tracking));
+
+  auto pair =
+      nodes_.emplace(domain, std::make_unique<Node>(std::move(domain), this));
+
   OSP_DCHECK(pair.second);
-
-  on_node_creation_ = nullptr;
+  OSP_DCHECK(nodes_.find(domain) != nodes_.end());
 }
 
-void DnsDataGraph::StopTracking(const DomainName& domain,
-                                DomainChangeCallback on_stop_tracking) {
-  OSP_DCHECK(on_stop_tracking);
-  OSP_DCHECK(!on_node_creation_);
-  OSP_DCHECK(!on_node_deletion_);
-  on_node_deletion_ = std::move(on_stop_tracking);
+void DnsDataGraphImpl::StopTracking(const DomainName& domain,
+                                    DomainChangeCallback on_stop_tracking) {
+  ScopedCallbackHandler deletion_handler =
+      GetScopedDeletionHandler(std::move(on_stop_tracking));
 
   auto it = nodes_.find(domain);
   OSP_CHECK(it != nodes_.end());
   OSP_DCHECK(it->second->parents().empty());
   it->second.reset();
-  nodes_.erase(domain);
-
-  on_node_deletion_ = nullptr;
+  const size_t erased_count = nodes_.erase(domain);
+  OSP_DCHECK(erased_count);
 }
 
-Error DnsDataGraph::ApplyDataRecordChange(
+Error DnsDataGraphImpl::ApplyDataRecordChange(
     MdnsRecord record,
     RecordChangedEvent event,
     DomainChangeCallback on_start_tracking,
     DomainChangeCallback on_stop_tracking) {
-  OSP_DCHECK(on_start_tracking);
-  OSP_DCHECK(on_stop_tracking);
+  ScopedCallbackHandler creation_handler =
+      GetScopedCreationHandler(std::move(on_start_tracking));
+  ScopedCallbackHandler deletion_handler =
+      GetScopedDeletionHandler(std::move(on_stop_tracking));
 
   auto it = nodes_.find(record.name());
   if (it == nodes_.end()) {
     return Error::Code::kOperationCancelled;
   }
 
-  // Update the callbacks so that any changes from the change application call
-  // the correct callback.
-  OSP_DCHECK(!on_node_creation_);
-  OSP_DCHECK(!on_node_deletion_);
-  on_node_creation_ = std::move(on_start_tracking);
-  on_node_deletion_ = std::move(on_stop_tracking);
-
   const auto result =
       it->second->ApplyDataRecordChange(std::move(record), event);
-
-  on_node_creation_ = nullptr;
-  on_node_deletion_ = nullptr;
 
   return result;
 }
 
-std::vector<ErrorOr<DnsSdInstanceEndpoint>> DnsDataGraph::CreateEndpoints(
+std::vector<ErrorOr<DnsSdInstanceEndpoint>> DnsDataGraphImpl::CreateEndpoints(
     DomainGroup domain_group,
     const DomainName& name) const {
   const auto it = nodes_.find(name);
@@ -326,7 +377,7 @@ std::vector<ErrorOr<DnsSdInstanceEndpoint>> DnsDataGraph::CreateEndpoints(
 }
 
 // static
-bool DnsDataGraph::IsValidAddressNode(Node* node) {
+bool DnsDataGraphImpl::IsValidAddressNode(Node* node) {
   const absl::optional<ARecordRdata> a =
       node->GetRdata<ARecordRdata>(DnsType::kA);
   const absl::optional<AAAARecordRdata> aaaa =
@@ -335,7 +386,7 @@ bool DnsDataGraph::IsValidAddressNode(Node* node) {
 }
 
 // static
-bool DnsDataGraph::IsValidSrvAndTxtNode(Node* node) {
+bool DnsDataGraphImpl::IsValidSrvAndTxtNode(Node* node) {
   const absl::optional<SrvRecordRdata> srv =
       node->GetRdata<SrvRecordRdata>(DnsType::kSRV);
   const absl::optional<TxtRecordRdata> txt =
@@ -345,7 +396,7 @@ bool DnsDataGraph::IsValidSrvAndTxtNode(Node* node) {
 }
 
 std::vector<ErrorOr<DnsSdInstanceEndpoint>>
-DnsDataGraph::CalculatePtrRecordEndpoints(Node* node) const {
+DnsDataGraphImpl::CalculatePtrRecordEndpoints(Node* node) const {
   // PTR records aren't actually part of the generated endpoint objects, so
   // call this method recursively on all children and
   std::vector<ErrorOr<DnsSdInstanceEndpoint>> endpoints;
@@ -364,29 +415,6 @@ DnsDataGraph::CalculatePtrRecordEndpoints(Node* node) const {
     }
   }
   return endpoints;
-}
-
-// static
-DnsDataGraph::DomainGroup DnsDataGraph::GetDomainGroup(DnsType type) {
-  switch (type) {
-    case DnsType::kA:
-    case DnsType::kAAAA:
-      return DnsDataGraph::DomainGroup::kAddress;
-    case DnsType::kSRV:
-    case DnsType::kTXT:
-      return DnsDataGraph::DomainGroup::kSrvAndTxt;
-    case DnsType::kPTR:
-      return DnsDataGraph::DomainGroup::kPtr;
-    default:
-      OSP_NOTREACHED();
-      return DnsDataGraph::DomainGroup::kNone;
-  }
-}
-
-// static
-DnsDataGraph::DomainGroup DnsDataGraph::GetDomainGroup(
-    const MdnsRecord record) {
-  return GetDomainGroup(record.dns_type());
 }
 
 }  // namespace discovery
