@@ -26,6 +26,9 @@ namespace openscreen {
 namespace cast {
 namespace {
 
+// Maximum amount of time needed for a query to be received.
+constexpr seconds kMaxQueryDuration{3};
+
 // Total wait time = 4 seconds.
 constexpr milliseconds kWaitLoopSleepTime(500);
 constexpr int kMaxWaitLoopIterations = 8;
@@ -251,6 +254,9 @@ class DiscoveryE2ETest : public testing::Test {
         });
   }
 
+  // TODO(issuetracker.google.com/159256503): Change this to use a polling
+  // method to wait until the service disappears rather than immediately failing
+  // if it exists, so waits throughout this file can be removed.
   void CheckNotPublishedService(ServiceInfo service_info,
                                 std::atomic_bool* has_been_seen) {
     OSP_DCHECK(dnssd_service_.get());
@@ -497,8 +503,9 @@ TEST_F(DiscoveryE2ETest, ValidateRecordsOnlyReceivedWhenQueryRunning) {
   CheckNotPublishedService(instance, &found);
   WaitUntilSeen(false, &found);
 
-  // Restart discovery and ensure that only the updated record is returned.
   StartDiscovery();
+  std::this_thread::sleep_for(kMaxQueryDuration);
+
   OSP_LOG << "Service discovery in progress...";
   found = false;
   CheckNotPublishedService(updated_instance, &found);
@@ -523,7 +530,6 @@ TEST_F(DiscoveryE2ETest, ValidateRefreshFlow) {
   auto discovery_config = GetConfigSettings();
   discovery_config.new_record_announcement_count = 0;
   discovery_config.new_query_announcement_count = 2;
-  constexpr seconds kMaxQueryDuration{3};
   SetUpService(discovery_config);
 
   auto instance = GetInfo(1);

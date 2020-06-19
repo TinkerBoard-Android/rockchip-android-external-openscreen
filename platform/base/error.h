@@ -161,6 +161,7 @@ class Error {
     // Discovery errors.
     kUpdateReceivedRecordFailure,
     kRecordPublicationError,
+    kProcessReceivedRecordFailure,
 
     // Generic errors.
     kUnknownError,
