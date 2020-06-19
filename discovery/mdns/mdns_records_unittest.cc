@@ -4,6 +4,11 @@
 
 #include "discovery/mdns/mdns_records.h"
 
+#include <limits>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/hash/hash_testing.h"
 #include "discovery/mdns/mdns_reader.h"
 #include "discovery/mdns/mdns_writer.h"
@@ -460,6 +465,57 @@ TEST(MdnsNsecRecordRdataTest, CopyAndMove) {
                                   DnsType::kSRV));
 }
 
+TEST(MdnsOptRecordRdataTest, Construct) {
+  OptRecordRdata rdata1;
+  EXPECT_EQ(rdata1.MaxWireSize(), size_t{0});
+  EXPECT_EQ(rdata1.options().size(), size_t{0});
+
+  OptRecordRdata::Option opt1{12, 34, {0x12, 0x34}};
+  OptRecordRdata::Option opt2{12, 34, {0x12, 0x34}};
+  OptRecordRdata::Option opt3{12, 34, {0x12, 0x34, 0x56}};
+  OptRecordRdata::Option opt4{34, 12, {0x00}};
+  OptRecordRdata::Option opt5{12, 12, {0x12, 0x34}};
+  rdata1 = OptRecordRdata(opt1, opt2, opt3, opt4, opt5);
+  EXPECT_EQ(rdata1.MaxWireSize(), size_t{30});
+
+  ASSERT_EQ(rdata1.options().size(), size_t{5});
+  EXPECT_EQ(rdata1.options()[0], opt5);
+  EXPECT_EQ(rdata1.options()[1], opt1);
+  EXPECT_EQ(rdata1.options()[2], opt2);
+  EXPECT_EQ(rdata1.options()[3], opt3);
+  EXPECT_EQ(rdata1.options()[4], opt4);
+}
+
+TEST(MdnsOptRecordRdataTest, Compare) {
+  OptRecordRdata::Option opt1{12, 34, {0x12, 0x34}};
+  OptRecordRdata::Option opt2{12, 34, {0x12, 0x34}};
+  OptRecordRdata::Option opt3{12, 34, {0x12, 0x56}};
+  OptRecordRdata rdata1(opt1);
+  OptRecordRdata rdata2(opt2);
+  OptRecordRdata rdata3(opt3);
+  OptRecordRdata rdata4;
+
+  EXPECT_EQ(rdata1, rdata1);
+  EXPECT_EQ(rdata2, rdata2);
+  EXPECT_EQ(rdata3, rdata3);
+  EXPECT_EQ(rdata4, rdata4);
+
+  EXPECT_EQ(rdata1, rdata2);
+  EXPECT_NE(rdata1, rdata3);
+  EXPECT_NE(rdata1, rdata4);
+  EXPECT_NE(rdata2, rdata3);
+  EXPECT_NE(rdata2, rdata4);
+  EXPECT_NE(rdata3, rdata4);
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {rdata1, rdata2, rdata3, rdata4}));
+}
+
+TEST(MdnsOptRecordRdataTest, CopyAndMove) {
+  OptRecordRdata::Option opt1{12, 34, {0x12, 0x34}};
+  TestCopyAndMove(OptRecordRdata(opt1));
+}
+
 TEST(MdnsRecordTest, Construct) {
   MdnsRecord record1;
   EXPECT_EQ(record1.MaxWireSize(), UINT64_C(11));
@@ -710,6 +766,12 @@ TEST(MdnsMessageTest, CopyAndMove) {
       std::vector<MdnsRecord>{record1}, std::vector<MdnsRecord>{record2},
       std::vector<MdnsRecord>{record3});
   TestCopyAndMove(message);
+}
+
+TEST(MdnsRecordOperations, CanBeProcessed) {
+  EXPECT_FALSE(CanBeProcessed(static_cast<DnsType>(1234)));
+  EXPECT_FALSE(CanBeProcessed(static_cast<DnsType>(222)));
+  EXPECT_FALSE(CanBeProcessed(static_cast<DnsType>(8973)));
 }
 
 }  // namespace discovery

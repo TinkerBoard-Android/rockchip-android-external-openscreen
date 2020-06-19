@@ -242,7 +242,7 @@ void MdnsQuerier::StartQuery(const DomainName& name,
                              MdnsRecordChangedCallback* callback) {
   OSP_DCHECK(task_runner_->IsRunningOnTaskRunner());
   OSP_DCHECK(callback);
-  OSP_DCHECK(dns_type != DnsType::kNSEC);
+  OSP_DCHECK(CanBeQueried(dns_type));
 
   // Add a new callback if haven't seen it before
   auto callbacks_it = callbacks_.equal_range(name);
@@ -300,7 +300,10 @@ void MdnsQuerier::StopQuery(const DomainName& name,
                             MdnsRecordChangedCallback* callback) {
   OSP_DCHECK(task_runner_->IsRunningOnTaskRunner());
   OSP_DCHECK(callback);
-  OSP_DCHECK(dns_type != DnsType::kNSEC);
+
+  if (!CanBeQueried(dns_type)) {
+    return;
+  }
 
   // Find and remove the callback.
   int callbacks_for_key = 0;
@@ -450,6 +453,11 @@ void MdnsQuerier::OnRecordExpired(const MdnsRecordTracker* tracker,
 
 void MdnsQuerier::ProcessRecord(const MdnsRecord& record) {
   OSP_DCHECK(task_runner_->IsRunningOnTaskRunner());
+
+  // Skip all records that can't be processed.
+  if (!CanBeProcessed(record.dns_type())) {
+    return;
+  }
 
   // Get the types which the received record is associated with. In most cases
   // this will only be the type of the provided record, but in the case of

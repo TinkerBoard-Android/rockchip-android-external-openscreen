@@ -25,7 +25,10 @@ const std::array<std::string, 3> kServiceEnumerationDomainLabels{
 
 enum AddResult { kNonePresent = 0, kAdded, kAlreadyKnown };
 
-std::chrono::seconds GetTtlForRecordType(DnsType type) {
+std::chrono::seconds GetTtlForNsecTargetingType(DnsType type) {
+  // NOTE: A 'default' switch statement has intentionally been avoided below to
+  // enforce that new DnsTypes added must be added below through a compile-time
+  // check.
   switch (type) {
     case DnsType::kA:
       return kARecordTtl;
@@ -41,17 +44,23 @@ std::chrono::seconds GetTtlForRecordType(DnsType type) {
       // If no records are present, re-querying should happen at the minimum
       // of any record that might be retrieved at that time.
       return kSrvRecordTtl;
-    default:
-      OSP_NOTREACHED();
-      return std::chrono::seconds(0);
+    case DnsType::kNSEC:
+    case DnsType::kOPT:
+      // Neither of these types should ever be hit. We should never be creating
+      // an NSEC record for type NSEC, and OPT record querying is not supported,
+      // so creating NSEC records for type OPT is not valid.
+      break;
   }
+
+  OSP_NOTREACHED() << "NSEC records do not support type " << type;
+  return std::chrono::seconds(0);
 }
 
 MdnsRecord CreateNsecRecord(DomainName target_name,
                             DnsType target_type,
                             DnsClass target_class) {
   auto rdata = NsecRecordRdata(target_name, target_type);
-  std::chrono::seconds ttl = GetTtlForRecordType(target_type);
+  std::chrono::seconds ttl = GetTtlForNsecTargetingType(target_type);
   return MdnsRecord(std::move(target_name), DnsType::kNSEC, target_class,
                     RecordType::kUnique, ttl, std::move(rdata));
 }
