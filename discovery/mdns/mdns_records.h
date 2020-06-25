@@ -135,9 +135,9 @@ class RawRecordRdata {
 };
 
 // SRV record format (http://www.ietf.org/rfc/rfc2782.txt):
-// 2 bytes network-order unsigned priority
-// 2 bytes network-order unsigned weight
-// 2 bytes network-order unsigned port
+//   2 bytes network-order unsigned priority
+//   2 bytes network-order unsigned weight
+//   2 bytes network-order unsigned port
 // target: domain name (on-the-wire representation)
 class SrvRecordRdata {
  public:
