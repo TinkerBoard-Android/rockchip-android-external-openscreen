@@ -52,7 +52,7 @@ void SetLogFifoOrDie(const char* filename) {
     g_log_fd = STDERR_FILENO;
   }
 
-  // Note: The use of OSP_CHECK/OSP_LOG here will log to stderr.
+  // Note: The use of OSP_CHECK/OSP_LOG_* here will log to stderr.
   struct stat st = {};
   int open_result = -1;
   if (stat(filename, &st) == -1 && errno == ENOENT) {
