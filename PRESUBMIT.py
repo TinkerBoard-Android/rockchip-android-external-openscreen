@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Rather than pass this to all of the checks, we override the global blacklist
-# with this one.
+# Rather than pass this to all of the checks, we override the global excluded
+# list with this one.
 _EXCLUDED_PATHS = (
   # Exclude all of third_party/ except for BUILD.gns that we maintain.
   r'third_party[\\\/].*(?<!BUILD.gn)$',

@@ -5,8 +5,8 @@ which, in turn, defers to the [Google C++ Style Guide](https://google.github.io/
 We also follow the [Chromium C++ Do's and Don'ts](https://sites.google.com/a/chromium.org/dev/developers/coding-style/cpp-dos-and-donts).
 
 C++14 language and library features are allowed in the Open Screen Library
-according to the [C++14 use in Chromium](
-https://chromium-cpp.appspot.com#core-whitelist) guidelines.
+according to the [C++14 use in Chromium](https://chromium-cpp.appspot.com)
+guidelines.
 
 In general Open Screen follows [You Aren't Gonna Need
 It](https://martinfowler.com/bliki/Yagni.html) principles.
@@ -26,7 +26,7 @@ unions, complex constructors, etc.).
 
 - `<functional>` and `std::function` objects are allowed.
 - `<chrono>` is allowed and encouraged for representation of time.
-- Abseil types are allowed based on the whitelist in [DEPS](
+- Abseil types are allowed based on the allowed list in [DEPS](
   https://chromium.googlesource.com/openscreen/+/refs/heads/master/DEPS).
 - However, Abseil types **must not be used in public APIs**.
 - `<thread>` and `<mutex>` are allowed, but discouraged from general use as the

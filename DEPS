@@ -180,7 +180,7 @@ include_rules = [
   # rules when in Chromium.
   '-third_party/abseil',
 
-  # Abseil whitelist.
+  # Abseil allowed headers.
   '+absl/algorithm/container.h',
   '+absl/base/thread_annotations.h',
   '+absl/hash/hash.h',
