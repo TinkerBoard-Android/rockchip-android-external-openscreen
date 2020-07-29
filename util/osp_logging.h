@@ -73,7 +73,6 @@ class Voidify {
 #define OSP_VLOG_IF(condition) !(condition) ? (void)0 : OSP_VLOG
 #define OSP_LOG_IF(level, condition) !(condition) ? (void)0 : OSP_LOG_##level
 
-// TODO(btolsch): Add tests for (D)OSP_CHECK and possibly logging.
 #define OSP_CHECK(condition) \
   OSP_LOG_IF(FATAL, !(condition)) << "OSP_CHECK(" << #condition << ") failed: "
 
