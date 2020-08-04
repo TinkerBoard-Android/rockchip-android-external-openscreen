@@ -8,7 +8,6 @@
 # to list the dependency's destination directory.
 
 use_relative_paths = True
-use_relative_hooks = True
 
 vars = {
   'boringssl_git': 'https://boringssl.googlesource.com',
