@@ -96,21 +96,17 @@ ErrorOr<std::unique_ptr<DiscoveryState>> StartDiscovery(
   return state;
 }
 
-void StartCastAgent(TaskRunnerImpl* task_runner,
-                    InterfaceInfo interface,
-                    GeneratedCredentials* creds) {
-  CastAgent agent(task_runner, interface, creds->provider.get(),
-                  creds->tls_credentials);
-  const auto error = agent.Start();
+std::unique_ptr<CastAgent> StartCastAgent(TaskRunnerImpl* task_runner,
+                                          const InterfaceInfo& interface,
+                                          GeneratedCredentials* creds) {
+  auto agent = std::make_unique<CastAgent>(
+      task_runner, interface, creds->provider.get(), creds->tls_credentials);
+  const auto error = agent->Start();
   if (!error.ok()) {
     OSP_LOG_ERROR << "Error occurred while starting agent: " << error;
-    return;
+    agent.reset();
   }
-
-  // Run the event loop until an exit is requested (e.g., the video player GUI
-  // window is closed, a SIGINT or SIGTERM is received, or whatever other
-  // appropriate user indication that shutdown is requested).
-  task_runner->RunUntilSignaled();
+  return agent;
 }
 
 void LogUsage(const char* argv0) {
@@ -174,7 +170,6 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
         return 1;
     }
   }
-  InterfaceInfo interface_info = GetInterfaceInfoFromName(argv[optind]);
   SetLogLevel(is_verbose ? openscreen::LogLevel::kVerbose
                          : openscreen::LogLevel::kInfo);
 
@@ -182,20 +177,35 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
 
-  auto discovery_state = StartDiscovery(task_runner, interface_info);
-  OSP_CHECK(discovery_state.is_value()) << "Failed to start discovery.";
+  // Post tasks to kick-off the CastAgent and, if successful, start discovery to
+  // make this standalone receiver visible to senders on the network.
+  std::unique_ptr<DiscoveryState> discovery_state;
+  std::unique_ptr<CastAgent> cast_agent;
+  task_runner->PostTask(
+      [&, interface = GetInterfaceInfoFromName(argv[optind])] {
+        auto creds = GenerateCredentials(
+            absl::StrCat("Standalone Receiver on ", interface.name));
+        OSP_CHECK(creds.is_value()) << creds.error();
+        cast_agent = StartCastAgent(task_runner, interface, &(creds.value()));
+        OSP_CHECK(cast_agent) << "Failed to start CastAgent.";
+        auto result = StartDiscovery(task_runner, interface);
+        OSP_CHECK(result.is_value()) << "Failed to start discovery.";
+        discovery_state = std::move(result.value());
+      });
 
-  auto creds = GenerateCredentials(
-      absl::StrCat("Standalone Receiver on ", argv[optind]));
-  OSP_CHECK(creds.is_value());
+  // Run the event loop until an exit is requested (e.g., the video player GUI
+  // window is closed, a SIGINT or SIGTERM is received, or whatever other
+  // appropriate user indication that shutdown is requested).
+  task_runner->RunUntilSignaled();
 
-  // Runs until the process is interrupted.  Safe to pass |task_runner| as it
-  // will not be destroyed by ShutDown() until this exits.
-  StartCastAgent(task_runner, interface_info, &(creds.value()));
+  // Shutdown the Cast Agent and discovery-related entities. This may cause one
+  // or more tasks to be posted, and so the TaskRunner is spun to give them a
+  // chance to execute.
+  discovery_state.reset();
+  cast_agent.reset();
+  task_runner->PostTask([task_runner] { task_runner->RequestStopSoon(); });
+  task_runner->RunUntilStopped();
 
-  // The task runner must be deleted after all serial delete pointers, such
-  // as the one stored in the discovery state.
-  discovery_state.value().reset();
   PlatformClientPosix::ShutDown();
   return 0;
 }

@@ -31,12 +31,12 @@ const TlsListenOptions kDefaultListenOptions{kDefaultMaxBacklogSize};
 
 CastAgent::CastAgent(
     TaskRunner* task_runner,
-    InterfaceInfo interface,
+    const InterfaceInfo& interface,
     DeviceAuthNamespaceHandler::CredentialsProvider* credentials_provider,
     TlsCredentials tls_credentials)
     : task_runner_(task_runner),
       credentials_provider_(credentials_provider),
-      tls_credentials_(tls_credentials) {
+      tls_credentials_(std::move(tls_credentials)) {
   const IPAddress address = interface.GetIpAddressV4()
                                 ? interface.GetIpAddressV4()
                                 : interface.GetIpAddressV6();

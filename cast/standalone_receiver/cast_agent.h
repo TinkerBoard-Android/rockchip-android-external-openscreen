@@ -45,7 +45,7 @@ class CastAgent final : public ReceiverSocketFactory::Client,
  public:
   CastAgent(
       TaskRunner* task_runner,
-      InterfaceInfo interface,
+      const InterfaceInfo& interface,
       DeviceAuthNamespaceHandler::CredentialsProvider* credentials_provider,
       TlsCredentials tls_credentials);
   ~CastAgent();
