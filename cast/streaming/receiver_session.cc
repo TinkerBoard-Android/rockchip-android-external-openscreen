@@ -155,9 +155,9 @@ ReceiverSession::~ReceiverSession() {
   message_port_->SetClient(nullptr);
 }
 
-void ReceiverSession::OnMessage(absl::string_view sender_id,
-                                absl::string_view message_namespace,
-                                absl::string_view message) {
+void ReceiverSession::OnMessage(const std::string& sender_id,
+                                const std::string& message_namespace,
+                                const std::string& message) {
   ErrorOr<Json::Value> message_json = json::Parse(message);
 
   if (!message_json) {

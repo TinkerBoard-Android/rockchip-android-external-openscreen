@@ -13,7 +13,6 @@
 // TODO(jophba): remove public abseil dependencies. Will require modifying
 // either Optional or ConfiguredReceivers, as the compiler currently has an
 // error.
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "cast/streaming/answer_messages.h"
 #include "cast/streaming/message_port.h"
@@ -131,9 +130,9 @@ class ReceiverSession final : public MessagePort::Client {
   ~ReceiverSession();
 
   // MessagePort::Client overrides
-  void OnMessage(absl::string_view sender_id,
-                 absl::string_view message_namespace,
-                 absl::string_view message) override;
+  void OnMessage(const std::string& sender_id,
+                 const std::string& message_namespace,
+                 const std::string& message) override;
   void OnError(Error error) override;
 
  private:

@@ -28,9 +28,9 @@ class CastSocketMessagePort : public MessagePort {
 
   // MessagePort overrides.
   void SetClient(MessagePort::Client* client) override;
-  void PostMessage(absl::string_view sender_id,
-                   absl::string_view message_namespace,
-                   absl::string_view message) override;
+  void PostMessage(const std::string& sender_id,
+                   const std::string& message_namespace,
+                   const std::string& message) override;
 
  private:
   MessagePort::Client* client_ = nullptr;

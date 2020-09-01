@@ -5,7 +5,8 @@
 #ifndef CAST_STREAMING_MESSAGE_PORT_H_
 #define CAST_STREAMING_MESSAGE_PORT_H_
 
-#include "absl/strings/string_view.h"
+#include <string>
+
 #include "platform/base/error.h"
 
 namespace openscreen {
@@ -19,17 +20,17 @@ class MessagePort {
  public:
   class Client {
    public:
-    virtual void OnMessage(absl::string_view sender_id,
-                           absl::string_view message_namespace,
-                           absl::string_view message) = 0;
+    virtual void OnMessage(const std::string& sender_id,
+                           const std::string& message_namespace,
+                           const std::string& message) = 0;
     virtual void OnError(Error error) = 0;
   };
 
   virtual ~MessagePort() = default;
   virtual void SetClient(Client* client) = 0;
-  virtual void PostMessage(absl::string_view sender_id,
-                           absl::string_view message_namespace,
-                           absl::string_view message) = 0;
+  virtual void PostMessage(const std::string& sender_id,
+                           const std::string& message_namespace,
+                           const std::string& message) = 0;
 };
 
 }  // namespace cast

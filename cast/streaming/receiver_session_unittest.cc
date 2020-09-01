@@ -235,7 +235,7 @@ class SimpleMessagePort : public MessagePort {
   ~SimpleMessagePort() override {}
   void SetClient(MessagePort::Client* client) override { client_ = client; }
 
-  void ReceiveMessage(absl::string_view message) {
+  void ReceiveMessage(const std::string& message) {
     ASSERT_NE(client_, nullptr);
     client_->OnMessage("sender-id", "namespace", message);
   }
@@ -245,10 +245,10 @@ class SimpleMessagePort : public MessagePort {
     client_->OnError(error);
   }
 
-  void PostMessage(absl::string_view sender_id,
-                   absl::string_view message_namespace,
-                   absl::string_view message) override {
-    posted_messages_.emplace_back(std::move(message));
+  void PostMessage(const std::string& sender_id,
+                   const std::string& message_namespace,
+                   const std::string& message) override {
+    posted_messages_.emplace_back(message);
   }
 
   MessagePort::Client* client() const { return client_; }

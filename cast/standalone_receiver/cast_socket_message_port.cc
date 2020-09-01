@@ -32,9 +32,9 @@ void CastSocketMessagePort::SetClient(MessagePort::Client* client) {
   client_ = client;
 }
 
-void CastSocketMessagePort::PostMessage(absl::string_view sender_id,
-                                        absl::string_view message_namespace,
-                                        absl::string_view message) {
+void CastSocketMessagePort::PostMessage(const std::string& sender_id,
+                                        const std::string& message_namespace,
+                                        const std::string& message) {
   ::cast::channel::CastMessage cast_message;
   cast_message.set_source_id(sender_id.data(), sender_id.size());
   cast_message.set_namespace_(message_namespace.data(),
