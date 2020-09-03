@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "cast/standalone_receiver/private_key_der.h"
 #include "platform/base/tls_credentials.h"
 #include "util/crypto/certificate_utils.h"
 #include "util/osp_logging.h"
