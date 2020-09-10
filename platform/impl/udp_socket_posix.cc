@@ -482,8 +482,6 @@ void UdpSocketPosix::ReceiveMessage() {
       });
 }
 
-// TODO(yakimakha): Consider changing the interface to accept UdpPacket as
-// an input parameter.
 void UdpSocketPosix::SendMessage(const void* data,
                                  size_t length,
                                  const IPEndpoint& dest) {
