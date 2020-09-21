@@ -295,7 +295,7 @@ ErrorOr<Json::Value> Stream::ToJson() const {
   root["targetDelay"] = static_cast<int>(target_delay.count());
   root["aesKey"] = HexEncode(aes_key);
   root["aesIvMask"] = HexEncode(aes_iv_mask);
-  root["ReceiverRtcpEventLog"] = receiver_rtcp_event_log;
+  root["receiverRtcpEventLog"] = receiver_rtcp_event_log;
   root["receiverRtcpDscp"] = receiver_rtcp_dscp;
   root["timeBase"] = "1/" + std::to_string(rtp_timebase);
   return root;

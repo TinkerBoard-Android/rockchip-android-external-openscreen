@@ -19,9 +19,7 @@ source_set("certificate") {
     "certificate/types.cc",
     "certificate/types.h",
   ]
-  public_deps = [
-    "../../third_party/boringssl",
-  ]
+  public_deps = [ "../../third_party/boringssl" ]
 
   deps = [
     "../../platform",
@@ -50,9 +48,7 @@ source_set("channel") {
     "public/cast_socket.h",
   ]
 
-  deps = [
-    "certificate/proto:certificate_proto",
-  ]
+  deps = [ "certificate/proto:certificate_proto" ]
 
   public_deps = [
     "../../platform",
@@ -81,9 +77,7 @@ if (!build_with_chromium) {
     testonly = true
 
     if (!is_mac) {
-      sources = [
-        "discovery/e2e_test/tests.cc",
-      ]
+      sources = [ "discovery/e2e_test/tests.cc" ]
     }
 
     deps = [
@@ -152,18 +146,12 @@ source_set("unittests") {
     "channel/proto:channel_proto",
   ]
 
-  data = [
-    "../../test/data/cast/common/certificate/",
-  ]
+  data = [ "../../test/data/cast/common/certificate/" ]
 }
 
 openscreen_fuzzer_test("message_framer_fuzzer") {
-  sources = [
-    "channel/message_framer_fuzzer.cc",
-  ]
-  deps = [
-    ":channel",
-  ]
+  sources = [ "channel/message_framer_fuzzer.cc" ]
+  deps = [ ":channel" ]
 
   seed_corpus = "channel/message_framer_fuzzer_seeds"
 

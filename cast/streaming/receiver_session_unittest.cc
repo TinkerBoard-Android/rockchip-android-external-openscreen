@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "cast/streaming/mock_environment.h"
+#include "cast/streaming/testing/simple_message_port.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "platform/base/ip_address.h"
@@ -229,37 +230,6 @@ constexpr char kInvalidTypeMessage[] = R"({
   "type": 39,
   "seqNum": 1337
 })";
-
-class SimpleMessagePort : public MessagePort {
- public:
-  ~SimpleMessagePort() override {}
-  void SetClient(MessagePort::Client* client) override { client_ = client; }
-
-  void ReceiveMessage(const std::string& message) {
-    ASSERT_NE(client_, nullptr);
-    client_->OnMessage("sender-id", "namespace", message);
-  }
-
-  void ReceiveError(Error error) {
-    ASSERT_NE(client_, nullptr);
-    client_->OnError(error);
-  }
-
-  void PostMessage(const std::string& sender_id,
-                   const std::string& message_namespace,
-                   const std::string& message) override {
-    posted_messages_.emplace_back(message);
-  }
-
-  MessagePort::Client* client() const { return client_; }
-  const std::vector<std::string> posted_messages() const {
-    return posted_messages_;
-  }
-
- private:
-  MessagePort::Client* client_ = nullptr;
-  std::vector<std::string> posted_messages_;
-};
 
 class FakeClient : public ReceiverSession::Client {
  public:

@@ -9,6 +9,8 @@ source_set("common") {
   sources = [
     "answer_messages.cc",
     "answer_messages.h",
+    "capture_options.cc",
+    "capture_options.h",
     "capture_recommendations.cc",
     "capture_recommendations.h",
     "clock_drift_smoother.cc",
@@ -95,9 +97,13 @@ source_set("sender") {
     "sender_packet_router.h",
     "sender_report_builder.cc",
     "sender_report_builder.h",
+    "sender_session.cc",
+    "sender_session.h",
   ]
 
   public_deps = [ ":common" ]
+
+  deps = [ "../../util" ]
 }
 
 source_set("unittests") {
@@ -127,8 +133,10 @@ source_set("unittests") {
     "rtp_time_unittest.cc",
     "sender_packet_router_unittest.cc",
     "sender_report_unittest.cc",
+    "sender_session_unittest.cc",
     "sender_unittest.cc",
     "ssrc_unittest.cc",
+    "testing/simple_message_port.h",
   ]
 
   deps = [

@@ -69,7 +69,7 @@ const SessionConfig kSampleAudioAnswerConfig{
 const SessionConfig kSampleVideoAnswerConfig{
     /* .sender_ssrc = */ 50001,
     /* .receiver_ssrc = */ 50002,
-    /* .rtp_timebase = */ static_cast<int>(kVideoTimebase::den),
+    /* .rtp_timebase = */ kRtpVideoTimebase,
     /* .channels = */ 1,
     /* .target_playout_delay */ kTargetPlayoutDelay,
     /* .aes_secret_key = */

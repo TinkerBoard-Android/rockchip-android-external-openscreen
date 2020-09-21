@@ -49,7 +49,7 @@ class FrameCrypto {
  public:
   // Construct with the given 16-bytes AES key and IV mask. Both arguments
   // should be randomly-generated for each new streaming session.
-  // GenerateRandomBytes() can be used to create them.
+  // crypto::GenerateRandomBytes() can be used to create them.
   FrameCrypto(const std::array<uint8_t, 16>& aes_key,
               const std::array<uint8_t, 16>& cast_iv_mask);
 
@@ -71,9 +71,6 @@ class FrameCrypto {
   static int GetPlaintextSize(const EncryptedFrame& encrypted_frame) {
     return encrypted_frame.data.size();
   }
-
-  // Returns random bytes from a cryptographically-secure RNG source.
-  static std::array<uint8_t, 16> GenerateRandomBytes();
 
  private:
   // The 244-byte AES_KEY struct, derived from the |aes_key| passed to the ctor,
