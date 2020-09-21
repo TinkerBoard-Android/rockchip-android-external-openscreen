@@ -32,6 +32,8 @@ source_set("certificate") {
 source_set("channel") {
   sources = [
     "channel/cast_socket.cc",
+    "channel/cast_socket_message_port.cc",
+    "channel/cast_socket_message_port.h",
     "channel/connection_namespace_handler.cc",
     "channel/connection_namespace_handler.h",
     "channel/message_framer.cc",
@@ -60,6 +62,7 @@ source_set("channel") {
 
 source_set("public") {
   sources = [
+    "public/message_port.h",
     "public/service_info.cc",
     "public/service_info.h",
   ]

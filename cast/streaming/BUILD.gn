@@ -50,6 +50,8 @@ source_set("common") {
   public_deps = [
     "../../third_party/abseil",
     "../../third_party/boringssl",
+    "../common:channel",
+    "../common/certificate/proto:certificate_proto",
   ]
 
   deps = [

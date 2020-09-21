@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CAST_STREAMING_MESSAGE_PORT_H_
-#define CAST_STREAMING_MESSAGE_PORT_H_
+#ifndef CAST_COMMON_PUBLIC_MESSAGE_PORT_H_
+#define CAST_COMMON_PUBLIC_MESSAGE_PORT_H_
 
 #include <string>
 
@@ -36,4 +36,4 @@ class MessagePort {
 }  // namespace cast
 }  // namespace openscreen
 
-#endif  // CAST_STREAMING_MESSAGE_PORT_H_
+#endif  // CAST_COMMON_PUBLIC_MESSAGE_PORT_H_

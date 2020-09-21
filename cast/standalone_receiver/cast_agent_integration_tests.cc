@@ -120,7 +120,7 @@ class CastAgentIntegrationTest : public ::testing::Test {
   SerialDeletePtr<TlsConnectionFactory> sender_tls_factory_;
 };
 
-TEST_F(CastAgentIntegrationTest, StartsListeningProperly) {
+TEST_F(CastAgentIntegrationTest, CanConnect) {
   absl::optional<InterfaceInfo> loopback = GetLoopbackInterfaceForTesting();
   ASSERT_TRUE(loopback.has_value());
 

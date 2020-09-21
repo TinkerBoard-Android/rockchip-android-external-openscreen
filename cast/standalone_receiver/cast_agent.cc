@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "cast/common/channel/cast_socket_message_port.h"
 #include "cast/common/channel/message_util.h"
-#include "cast/standalone_receiver/cast_socket_message_port.h"
 #include "cast/streaming/constants.h"
 #include "cast/streaming/offer_messages.h"
 #include "platform/base/tls_credentials.h"
@@ -52,17 +52,16 @@ CastAgent::~CastAgent() = default;
 Error CastAgent::Start() {
   OSP_CHECK(!current_session_);
 
-  auth_handler_ = MakeSerialDelete<DeviceAuthNamespaceHandler>(
-      task_runner_, credentials_provider_);
-  router_ = MakeSerialDelete<VirtualConnectionRouter>(task_runner_,
-                                                      &connection_manager_);
-  router_->AddHandlerForLocalId(kPlatformReceiverId, auth_handler_.get());
-  socket_factory_ = MakeSerialDelete<ReceiverSocketFactory>(task_runner_, this,
-                                                            router_.get());
-
   task_runner_->PostTask([this] {
     wake_lock_ = ScopedWakeLock::Create(task_runner_);
 
+    auth_handler_ = MakeSerialDelete<DeviceAuthNamespaceHandler>(
+        task_runner_, credentials_provider_);
+    router_ = MakeSerialDelete<VirtualConnectionRouter>(task_runner_,
+                                                        &connection_manager_);
+    router_->AddHandlerForLocalId(kPlatformReceiverId, auth_handler_.get());
+    socket_factory_ = MakeSerialDelete<ReceiverSocketFactory>(
+        task_runner_, this, router_.get());
     connection_factory_ = SerialDeletePtr<TlsConnectionFactory>(
         task_runner_,
         TlsConnectionFactory::CreateFactory(socket_factory_.get(), task_runner_)

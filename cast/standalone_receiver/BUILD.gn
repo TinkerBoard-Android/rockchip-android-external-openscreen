@@ -13,8 +13,6 @@ if (!build_with_chromium) {
     sources = [
       "cast_agent.cc",
       "cast_agent.h",
-      "cast_socket_message_port.cc",
-      "cast_socket_message_port.h",
       "static_credentials.cc",
       "static_credentials.h",
       "streaming_playback_controller.cc",

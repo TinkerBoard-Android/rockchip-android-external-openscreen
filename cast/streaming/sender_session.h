@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "cast/common/public/message_port.h"
 #include "cast/streaming/answer_messages.h"
 #include "cast/streaming/capture_options.h"
-#include "cast/streaming/message_port.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/sender.h"
 #include "cast/streaming/sender_packet_router.h"

@@ -9,8 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "cast/common/public/message_port.h"
 #include "cast/streaming/message_fields.h"
-#include "cast/streaming/message_port.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

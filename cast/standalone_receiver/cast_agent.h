@@ -10,12 +10,12 @@
 #include <memory>
 #include <vector>
 
+#include "cast/common/channel/cast_socket_message_port.h"
 #include "cast/common/channel/virtual_connection_manager.h"
 #include "cast/common/channel/virtual_connection_router.h"
 #include "cast/common/public/cast_socket.h"
 #include "cast/receiver/channel/device_auth_namespace_handler.h"
 #include "cast/receiver/public/receiver_socket_factory.h"
-#include "cast/standalone_receiver/cast_socket_message_port.h"
 #include "cast/standalone_receiver/static_credentials.h"
 #include "cast/standalone_receiver/streaming_playback_controller.h"
 #include "cast/streaming/environment.h"

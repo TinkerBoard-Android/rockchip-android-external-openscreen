@@ -14,9 +14,9 @@
 // Will require modifying either Optional or ConfiguredReceivers, as the
 // compiler currently has an error.
 #include "absl/types/optional.h"
+#include "cast/common/public/message_port.h"
 #include "cast/streaming/answer_messages.h"
 #include "cast/streaming/capture_options.h"
-#include "cast/streaming/message_port.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/receiver_packet_router.h"
 #include "cast/streaming/session_config.h"

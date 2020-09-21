@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CAST_STANDALONE_RECEIVER_CAST_SOCKET_MESSAGE_PORT_H_
-#define CAST_STANDALONE_RECEIVER_CAST_SOCKET_MESSAGE_PORT_H_
+#ifndef CAST_COMMON_CHANNEL_CAST_SOCKET_MESSAGE_PORT_H_
+#define CAST_COMMON_CHANNEL_CAST_SOCKET_MESSAGE_PORT_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "cast/common/public/cast_socket.h"
-#include "cast/streaming/receiver_session.h"
+#include "cast/common/public/message_port.h"
 #include "util/weak_ptr.h"
 
 namespace openscreen {
@@ -40,4 +40,4 @@ class CastSocketMessagePort : public MessagePort {
 }  // namespace cast
 }  // namespace openscreen
 
-#endif  // CAST_STANDALONE_RECEIVER_CAST_SOCKET_MESSAGE_PORT_H_
+#endif  // CAST_COMMON_CHANNEL_CAST_SOCKET_MESSAGE_PORT_H_
