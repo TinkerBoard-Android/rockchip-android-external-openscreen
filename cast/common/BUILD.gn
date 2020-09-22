@@ -109,9 +109,11 @@ source_set("test_helpers") {
     ":channel",
     ":public",
     "../../platform:test",
+    "../../testing/util",
     "../../third_party/abseil",
     "../../third_party/boringssl",
     "../../third_party/googletest:gmock",
+    "../../third_party/googletest:gtest",
   ]
   deps = [
     "../../platform",

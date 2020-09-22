@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "cast/standalone_receiver/static_credentials.h"
+#include "cast/receiver/channel/static_credentials.h"
 
 #include <openssl/mem.h>
 
@@ -41,6 +41,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
     absl::string_view device_certificate_id) {
   GeneratedCredentials credentials;
 
+  // Device cert chain generation.
   bssl::UniquePtr<EVP_PKEY> root_key = GenerateRsaKeyPair();
   bssl::UniquePtr<EVP_PKEY> intermediate_key = GenerateRsaKeyPair();
   bssl::UniquePtr<EVP_PKEY> device_key = GenerateRsaKeyPair();
@@ -71,7 +72,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   OSP_CHECK(device_cert_or_error);
   bssl::UniquePtr<X509> device_cert = std::move(device_cert_or_error.value());
 
-  // NOTE: Device cert chain plumbing + serialization.
+  // Device cert chain plumbing + serialization.
   DeviceCredentials device_creds;
   device_creds.private_key = std::move(device_key);
 
@@ -92,7 +93,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   out = &trust_anchor_der[0];
   i2d_X509(root_cert.get(), &out);
 
-  // NOTE: TLS key pair + certificate generation.
+  // TLS key pair + certificate generation.
   bssl::UniquePtr<EVP_PKEY> tls_key = GenerateRsaKeyPair();
   OSP_CHECK_EQ(EVP_PKEY_id(tls_key.get()), EVP_PKEY_RSA);
   ErrorOr<bssl::UniquePtr<X509>> tls_cert_or_error =
@@ -101,7 +102,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   OSP_CHECK(tls_cert_or_error);
   bssl::UniquePtr<X509> tls_cert = std::move(tls_cert_or_error.value());
 
-  // NOTE: TLS private key serialization.
+  // TLS private key serialization.
   RSA* rsa_key = EVP_PKEY_get0_RSA(tls_key.get());
   size_t pkey_len = 0;
   uint8_t* pkey_bytes = nullptr;
@@ -110,7 +111,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   std::vector<uint8_t> tls_key_serial(pkey_bytes, pkey_bytes + pkey_len);
   OPENSSL_free(pkey_bytes);
 
-  // NOTE: TLS public key serialization.
+  // TLS public key serialization.
   pkey_len = 0;
   pkey_bytes = nullptr;
   OSP_CHECK(RSA_public_key_to_bytes(&pkey_bytes, &pkey_len, rsa_key));
@@ -118,7 +119,7 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   std::vector<uint8_t> tls_pub_serial(pkey_bytes, pkey_bytes + pkey_len);
   OPENSSL_free(pkey_bytes);
 
-  // NOTE: TLS cert serialization.
+  // TLS cert serialization.
   cert_length = 0;
   cert_length = i2d_X509(tls_cert.get(), nullptr);
   OSP_CHECK_GT(cert_length, 0);
@@ -126,9 +127,10 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   out = &tls_cert_serial[0];
   i2d_X509(tls_cert.get(), &out);
 
+  auto provider = std::make_unique<StaticCredentialsProvider>(
+      std::move(device_creds), tls_cert_serial);
   return GeneratedCredentials{
-      std::make_unique<StaticCredentialsProvider>(std::move(device_creds),
-                                                  tls_cert_serial),
+      std::move(provider),
       TlsCredentials{std::move(tls_key_serial), std::move(tls_pub_serial),
                      std::move(tls_cert_serial)},
       std::move(trust_anchor_der)};

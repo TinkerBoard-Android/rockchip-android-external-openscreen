@@ -10,8 +10,8 @@
 
 #include "absl/strings/str_cat.h"
 #include "cast/common/public/service_info.h"
+#include "cast/receiver/channel/static_credentials.h"
 #include "cast/standalone_receiver/cast_agent.h"
-#include "cast/standalone_receiver/static_credentials.h"
 #include "cast/streaming/ssrc.h"
 #include "discovery/common/config.h"
 #include "discovery/common/reporting_client.h"

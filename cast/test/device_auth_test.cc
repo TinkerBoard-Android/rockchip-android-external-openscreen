@@ -12,6 +12,7 @@
 #include "cast/common/channel/virtual_connection_router.h"
 #include "cast/common/public/cast_socket.h"
 #include "cast/receiver/channel/device_auth_namespace_handler.h"
+#include "cast/receiver/channel/static_credentials.h"
 #include "cast/receiver/channel/testing/device_auth_test_helpers.h"
 #include "cast/sender/channel/cast_auth_util.h"
 #include "cast/sender/channel/message_util.h"

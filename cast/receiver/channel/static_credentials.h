@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CAST_STANDALONE_RECEIVER_STATIC_CREDENTIALS_H_
-#define CAST_STANDALONE_RECEIVER_STATIC_CREDENTIALS_H_
+#ifndef CAST_RECEIVER_CHANNEL_STATIC_CREDENTIALS_H_
+#define CAST_RECEIVER_CHANNEL_STATIC_CREDENTIALS_H_
 
 #include <memory>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "cast/common/certificate/cast_cert_validator_internal.h"
 #include "cast/receiver/channel/device_auth_namespace_handler.h"
 #include "platform/base/error.h"
 #include "platform/base/tls_credentials.h"
@@ -57,4 +58,4 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
 }  // namespace cast
 }  // namespace openscreen
 
-#endif  // CAST_STANDALONE_RECEIVER_STATIC_CREDENTIALS_H_
+#endif  // CAST_RECEIVER_CHANNEL_STATIC_CREDENTIALS_H_

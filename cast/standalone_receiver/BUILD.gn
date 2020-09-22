@@ -13,8 +13,6 @@ if (!build_with_chromium) {
     sources = [
       "cast_agent.cc",
       "cast_agent.h",
-      "static_credentials.cc",
-      "static_credentials.h",
       "streaming_playback_controller.cc",
       "streaming_playback_controller.h",
     ]

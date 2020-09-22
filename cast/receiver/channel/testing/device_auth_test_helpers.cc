@@ -4,6 +4,10 @@
 
 #include "cast/receiver/channel/testing/device_auth_test_helpers.h"
 
+#include <string>
+#include <utility>
+
+#include "cast/common/certificate/testing/test_helpers.h"
 #include "gtest/gtest.h"
 
 namespace openscreen {
