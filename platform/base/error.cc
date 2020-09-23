@@ -110,6 +110,10 @@ std::ostream& operator<<(std::ostream& os, const Error::Code& code) {
       return os << "SocketSendFailure";
     case Error::Code::kMdnsRegisterFailure:
       return os << "MdnsRegisterFailure";
+    case Error::Code::kMdnsReadFailure:
+      return os << "MdnsReadFailure";
+    case Error::Code::kMdnsNonConformingFailure:
+      return os << "kMdnsNonConformingFailure";
     case Error::Code::kParseError:
       return os << "ParseError";
     case Error::Code::kUnknownMessageType:

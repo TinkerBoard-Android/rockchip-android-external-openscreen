@@ -63,7 +63,10 @@ class Error {
     kSocketReadFailure,
     kSocketSendFailure,
 
+    // MDNS errors.
     kMdnsRegisterFailure,
+    kMdnsReadFailure,
+    kMdnsNonConformingFailure,
 
     kParseError,
     kUnknownMessageType,
