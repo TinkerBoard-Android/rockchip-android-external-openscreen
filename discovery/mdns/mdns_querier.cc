@@ -635,8 +635,7 @@ void MdnsQuerier::ProcessCallbacks(const MdnsRecord& record,
 
 void MdnsQuerier::AddQuestion(const MdnsQuestion& question) {
   auto tracker = std::make_unique<MdnsQuestionTracker>(
-      std::move(question), sender_, task_runner_, now_function_, random_delay_,
-      config_);
+      question, sender_, task_runner_, now_function_, random_delay_, config_);
   MdnsQuestionTracker* ptr = tracker.get();
   questions_.emplace(question.name(), std::move(tracker));
 
