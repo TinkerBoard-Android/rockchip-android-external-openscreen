@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "cast/streaming/mock_environment.h"
+#include "cast/streaming/receiver.h"
 #include "cast/streaming/testing/simple_message_port.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -298,31 +299,23 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithDefaultPreferences) {
   EXPECT_CALL(client_, OnNegotiated(session_.get(), _))
       .WillOnce([](const ReceiverSession* session_,
                    ReceiverSession::ConfiguredReceivers cr) {
-        EXPECT_TRUE(cr.audio);
-        EXPECT_EQ(cr.audio.value().receiver_config.sender_ssrc, 19088747u);
-        EXPECT_EQ(cr.audio.value().receiver_config.receiver_ssrc, 19088748u);
-        EXPECT_EQ(cr.audio.value().receiver_config.channels, 2);
-        EXPECT_EQ(cr.audio.value().receiver_config.rtp_timebase, 48000);
+        EXPECT_TRUE(cr.audio_receiver);
+        EXPECT_EQ(cr.audio_receiver->config().sender_ssrc, 19088747u);
+        EXPECT_EQ(cr.audio_receiver->config().receiver_ssrc, 19088748u);
+        EXPECT_EQ(cr.audio_receiver->config().channels, 2);
+        EXPECT_EQ(cr.audio_receiver->config().rtp_timebase, 48000);
 
         // We should have chosen opus
-        EXPECT_EQ(cr.audio.value().selected_stream.stream.index, 1337);
-        EXPECT_EQ(cr.audio.value().selected_stream.stream.type,
-                  Stream::Type::kAudioSource);
-        EXPECT_EQ(cr.audio.value().selected_stream.stream.codec_name, "opus");
-        EXPECT_EQ(cr.audio.value().selected_stream.stream.channels, 2);
+        EXPECT_EQ(cr.audio_config.codec, AudioCodec::kOpus);
 
-        EXPECT_TRUE(cr.video);
-        EXPECT_EQ(cr.video.value().receiver_config.sender_ssrc, 19088745u);
-        EXPECT_EQ(cr.video.value().receiver_config.receiver_ssrc, 19088746u);
-        EXPECT_EQ(cr.video.value().receiver_config.channels, 1);
-        EXPECT_EQ(cr.video.value().receiver_config.rtp_timebase, 90000);
+        EXPECT_TRUE(cr.video_receiver);
+        EXPECT_EQ(cr.video_receiver->config().sender_ssrc, 19088745u);
+        EXPECT_EQ(cr.video_receiver->config().receiver_ssrc, 19088746u);
+        EXPECT_EQ(cr.video_receiver->config().channels, 1);
+        EXPECT_EQ(cr.video_receiver->config().rtp_timebase, 90000);
 
         // We should have chosen vp8
-        EXPECT_EQ(cr.video.value().selected_stream.stream.index, 31338);
-        EXPECT_EQ(cr.video.value().selected_stream.stream.type,
-                  Stream::Type::kVideoSource);
-        EXPECT_EQ(cr.video.value().selected_stream.stream.codec_name, "vp8");
-        EXPECT_EQ(cr.video.value().selected_stream.stream.channels, 1);
+        EXPECT_EQ(cr.video_config.codec, VideoCodec::kVp8);
       });
   EXPECT_CALL(client_,
               OnReceiversDestroying(session_.get(),
@@ -363,25 +356,25 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithDefaultPreferences) {
 TEST_F(ReceiverSessionTest, CanNegotiateWithCustomCodecPreferences) {
   ReceiverSession session(
       &client_, environment_.get(), message_port_.get(),
-      ReceiverSession::Preferences{{ReceiverSession::VideoCodec::kVp9},
-                                   {ReceiverSession::AudioCodec::kOpus}});
+      ReceiverSession::Preferences{{VideoCodec::kVp9}, {AudioCodec::kOpus}});
 
   InSequence s;
   EXPECT_CALL(client_, OnNegotiated(&session, _))
       .WillOnce([](const ReceiverSession* session_,
                    ReceiverSession::ConfiguredReceivers cr) {
-        EXPECT_TRUE(cr.audio);
-        EXPECT_EQ(cr.audio.value().receiver_config.sender_ssrc, 19088747u);
-        EXPECT_EQ(cr.audio.value().receiver_config.receiver_ssrc, 19088748u);
-        EXPECT_EQ(cr.audio.value().receiver_config.channels, 2);
-        EXPECT_EQ(cr.audio.value().receiver_config.rtp_timebase, 48000);
+        EXPECT_TRUE(cr.audio_receiver);
+        EXPECT_EQ(cr.audio_receiver->config().sender_ssrc, 19088747u);
+        EXPECT_EQ(cr.audio_receiver->config().receiver_ssrc, 19088748u);
+        EXPECT_EQ(cr.audio_receiver->config().channels, 2);
+        EXPECT_EQ(cr.audio_receiver->config().rtp_timebase, 48000);
+        EXPECT_EQ(cr.audio_config.codec, AudioCodec::kOpus);
 
-        EXPECT_TRUE(cr.video);
-        // We should have chosen vp9
-        EXPECT_EQ(cr.video.value().receiver_config.sender_ssrc, 19088743u);
-        EXPECT_EQ(cr.video.value().receiver_config.receiver_ssrc, 19088744u);
-        EXPECT_EQ(cr.video.value().receiver_config.channels, 1);
-        EXPECT_EQ(cr.video.value().receiver_config.rtp_timebase, 90000);
+        EXPECT_TRUE(cr.video_receiver);
+        EXPECT_EQ(cr.video_receiver->config().sender_ssrc, 19088743u);
+        EXPECT_EQ(cr.video_receiver->config().receiver_ssrc, 19088744u);
+        EXPECT_EQ(cr.video_receiver->config().channels, 1);
+        EXPECT_EQ(cr.video_receiver->config().rtp_timebase, 90000);
+        EXPECT_EQ(cr.video_config.codec, VideoCodec::kVp9);
       });
   EXPECT_CALL(client_, OnReceiversDestroying(
                            &session, ReceiverSession::Client::kEndOfSession));
@@ -403,12 +396,11 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
       absl::optional<AspectRatio>(AspectRatio{16, 9}),
       absl::optional<AspectRatioConstraint>(AspectRatioConstraint::kFixed)});
 
-  ReceiverSession session(
-      &client_, environment_.get(), message_port_.get(),
-      ReceiverSession::Preferences{{ReceiverSession::VideoCodec::kVp9},
-                                   {ReceiverSession::AudioCodec::kOpus},
-                                   std::move(constraints),
-                                   std::move(display)});
+  ReceiverSession session(&client_, environment_.get(), message_port_.get(),
+                          ReceiverSession::Preferences{{VideoCodec::kVp9},
+                                                       {AudioCodec::kOpus},
+                                                       std::move(constraints),
+                                                       std::move(display)});
 
   InSequence s;
   EXPECT_CALL(client_, OnNegotiated(&session, _));

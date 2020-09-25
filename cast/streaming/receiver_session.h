@@ -10,13 +10,11 @@
 #include <utility>
 #include <vector>
 
-// TODO(issuetracker.google.com/166640702): remove public abseil dependencies.
-// Will require modifying either Optional or ConfiguredReceivers, as the
-// compiler currently has an error.
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "cast/common/public/message_port.h"
 #include "cast/streaming/answer_messages.h"
-#include "cast/streaming/capture_options.h"
+#include "cast/streaming/capture_configs.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/receiver_packet_router.h"
 #include "cast/streaming/session_config.h"
@@ -30,9 +28,9 @@ class Receiver;
 
 class ReceiverSession final : public MessagePort::Client {
  public:
-  // A small helper struct that contains all of the information necessary for
-  // a configured receiver, including a receiver, its session config, and the
-  // stream selected from the OFFER message to instantiate the receiver.
+  // DEPRECATED.
+  // TODO(crbug.com/1132097): Remove deprecated ConfiguredReceiver fields after
+  // downstream migration
   template <typename T>
   struct ConfiguredReceiver {
     Receiver* receiver;
@@ -51,10 +49,19 @@ class ReceiverSession final : public MessagePort::Client {
     // ReceiverSession, not the Client, and references to these pointers must be
     // cleared before a call to Client::OnReceiversDestroying() returns.
 
-    // If the receiver is audio- or video-only, either of the receivers
-    // may be nullptr. However, in the majority of cases they will be populated.
-    // TODO(issuetracker.google.com/166640702): remove absl::optional
-    // as well as VideoStream, AudioStream from public API.
+    // If the receiver is audio- or video-only, or we failed to negotiate
+    // an acceptable session configuration with the sender, then either of the
+    // receivers may be nullptr. In this case, the associated config is default
+    // initialized and should be ignored.
+    Receiver* audio_receiver;
+    AudioCaptureConfig audio_config;
+
+    Receiver* video_receiver;
+    VideoCaptureConfig video_config;
+
+    // DEPRECATED
+    // TODO(crbug.com/1132097): Remove deprecated ConfiguredReceiver fields
+    // after downstream migration
     absl::optional<ConfiguredReceiver<AudioStream>> audio;
     absl::optional<ConfiguredReceiver<VideoStream>> video;
   };
@@ -85,11 +92,6 @@ class ReceiverSession final : public MessagePort::Client {
    protected:
     virtual ~Client();
   };
-
-  // The embedder has the option of providing a list of prioritized
-  // preferences for selecting from the offer.
-  enum class AudioCodec { kAac, kOpus };
-  enum class VideoCodec { kH264, kVp8, kHevc, kVp9 };
 
   // Note: embedders are required to implement the following
   // codecs to be Cast V2 compliant: H264, VP8, AAC, Opus.
@@ -145,8 +147,7 @@ class ReceiverSession final : public MessagePort::Client {
   void OnOffer(Message* message);
 
   // Used by SpawnReceivers to generate a receiver for a specific stream.
-  std::pair<SessionConfig, std::unique_ptr<Receiver>> ConstructReceiver(
-      const Stream& stream);
+  std::unique_ptr<Receiver> ConstructReceiver(const Stream& stream);
 
   // Creates a set of configured receivers from a given pair of audio and
   // video streams. NOTE: either audio or video may be null, but not both.

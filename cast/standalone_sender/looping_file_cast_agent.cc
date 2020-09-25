@@ -119,11 +119,11 @@ void LoopingFileCastAgent::CreateAndStartSession() {
       connection_settings_->receiver_endpoint.address, this, environment_.get(),
       &message_port_);
 
-  AudioCaptureOption audio_option;
-  VideoCaptureOption video_option;
+  AudioCaptureConfig audio_config;
+  VideoCaptureConfig video_config;
   // Use default display resolution of 1080P.
-  video_option.resolutions.emplace_back(DisplayResolution{});
-  current_session_->Negotiate({audio_option}, {video_option});
+  video_config.resolutions.emplace_back(DisplayResolution{});
+  current_session_->Negotiate({audio_config}, {video_config});
 }
 
 void LoopingFileCastAgent::StopCurrentSession() {

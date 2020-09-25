@@ -19,6 +19,10 @@ if (build_with_chromium) {
       "-Wno-extra-semi",
       "-Wno-range-loop-analysis",
     ]
+
+    if (is_mac) {
+      cflags += [ "-Wno-range-loop-analysis" ]
+    }
   }
 
   # NOTE: StrFormat is specifically excluded from the Abseil source set due

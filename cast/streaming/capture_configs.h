@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CAST_STREAMING_CAPTURE_OPTIONS_H_
-#define CAST_STREAMING_CAPTURE_OPTIONS_H_
+#ifndef CAST_STREAMING_CAPTURE_CONFIGS_H_
+#define CAST_STREAMING_CAPTURE_CONFIGS_H_
 
 #include <string>
 #include <vector>
@@ -13,12 +13,10 @@
 namespace openscreen {
 namespace cast {
 
-std::string CodecToString(AudioCodec codec);
-std::string CodecToString(VideoCodec codec);
-
-// A configuration set that can be used by the sender to capture audio. Used
-// by Cast Streaming to provide an offer to the receiver.
-struct AudioCaptureOption {
+// A configuration set that can be used by the sender to capture audio, and the
+// receiver to playback audio. Used by Cast Streaming to provide an offer to the
+// receiver.
+struct AudioCaptureConfig {
   // Audio codec represented by this configuration.
   AudioCodec codec = AudioCodec::kOpus;
 
@@ -56,9 +54,10 @@ struct FrameRate {
   int denominator = 1;
 };
 
-// A configuration set that can be used by the sender to capture video. Used
-// by Cast Streaming to provide an offer to the receiver.
-struct VideoCaptureOption {
+// A configuration set that can be used by the sender to capture video, as
+// well as the receiver to playback video. Used by Cast Streaming to provide an
+// offer to the receiver.
+struct VideoCaptureConfig {
   // Video codec represented by this configuration.
   VideoCodec codec = VideoCodec::kVp8;
 
@@ -81,4 +80,4 @@ struct VideoCaptureOption {
 }  // namespace cast
 }  // namespace openscreen
 
-#endif  // CAST_STREAMING_CAPTURE_OPTIONS_H_
+#endif  // CAST_STREAMING_CAPTURE_CONFIGS_H_

@@ -12,7 +12,7 @@
 
 #include "cast/common/public/message_port.h"
 #include "cast/streaming/answer_messages.h"
-#include "cast/streaming/capture_options.h"
+#include "cast/streaming/capture_configs.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/sender.h"
 #include "cast/streaming/sender_packet_router.h"
@@ -29,6 +29,7 @@ struct Recommendations;
 
 class Environment;
 class Sender;
+
 class SenderSession final : public MessagePort::Client {
  public:
   // Upon successful negotiation, a set of configured senders is constructed
@@ -41,10 +42,10 @@ class SenderSession final : public MessagePort::Client {
     // If the sender is audio- or video-only, either of the senders
     // may be nullptr. However, in the majority of cases they will be populated.
     Sender* audio_sender;
-    AudioCaptureOption audio_config;
+    AudioCaptureConfig audio_config;
 
     Sender* video_sender;
-    VideoCaptureOption video_config;
+    VideoCaptureConfig video_config;
   };
 
   // The embedder should provide a client for handling the negotiation.
@@ -86,8 +87,8 @@ class SenderSession final : public MessagePort::Client {
   // Starts an OFFER/ANSWER exchange with the already configured receiver
   // over the message port. The caller should assume any configured senders
   // become invalid when calling this method.
-  Error Negotiate(std::vector<AudioCaptureOption> audio_configs,
-                  std::vector<VideoCaptureOption> video_configs);
+  Error Negotiate(std::vector<AudioCaptureConfig> audio_configs,
+                  std::vector<VideoCaptureConfig> video_configs);
 
   // MessagePort::Client overrides
   void OnMessage(const std::string& sender_id,
@@ -109,8 +110,8 @@ class SenderSession final : public MessagePort::Client {
   struct Negotiation {
     Offer offer;
 
-    std::vector<AudioCaptureOption> audio_configs;
-    std::vector<VideoCaptureOption> video_configs;
+    std::vector<AudioCaptureConfig> audio_configs;
+    std::vector<VideoCaptureConfig> video_configs;
   };
 
   // Specific message type handler methods.
