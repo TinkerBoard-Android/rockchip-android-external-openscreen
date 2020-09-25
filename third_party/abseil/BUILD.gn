@@ -17,6 +17,7 @@ if (build_with_chromium) {
     cflags = [
       "-Wno-sign-compare",
       "-Wno-extra-semi",
+      "-Wno-range-loop-analysis",
     ]
   }
 
