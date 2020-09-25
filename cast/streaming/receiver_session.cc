@@ -46,7 +46,7 @@ const Stream* SelectStream(const std::vector<Codec>& preferred_codecs,
 // Helper method that creates an invalid Answer response.
 Json::Value CreateInvalidAnswerMessage(Error error) {
   Json::Value message_root;
-  message_root[kMessageKeyType] = kMessageTypeAnswer;
+  message_root[kMessageType] = kMessageTypeAnswer;
   message_root[kResult] = kResultError;
   message_root[kErrorMessageBody][kErrorCode] = static_cast<int>(error.code());
   message_root[kErrorMessageBody][kErrorDescription] = error.message();
@@ -58,7 +58,7 @@ Json::Value CreateInvalidAnswerMessage(Error error) {
 Json::Value CreateAnswerMessage(const Answer& answer) {
   OSP_DCHECK(answer.IsValid());
   Json::Value message_root;
-  message_root[kMessageKeyType] = kMessageTypeAnswer;
+  message_root[kMessageType] = kMessageTypeAnswer;
   message_root[kAnswerMessageBody] = answer.ToJson();
   message_root[kResult] = kResultOk;
   return message_root;

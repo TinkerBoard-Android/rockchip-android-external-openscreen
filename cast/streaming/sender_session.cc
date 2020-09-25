@@ -190,7 +190,7 @@ Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
       std::move(offer), std::move(audio_configs), std::move(video_configs)});
 
   Json::Value message_body;
-  message_body[kMessageKeyType] = kMessageTypeOffer;
+  message_body[kMessageType] = kMessageTypeOffer;
   message_body[kOfferMessageBody] = std::move(json_offer.value());
 
   Message message;

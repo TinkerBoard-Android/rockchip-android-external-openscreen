@@ -20,7 +20,7 @@ namespace cast {
 constexpr char kCastWebrtcNamespace[] = "urn:x-cast:com.google.cast.webrtc";
 
 // JSON message field values specific to the Sender Session.
-constexpr char kMessageKeyType[] = "type";
+constexpr char kMessageType[] = "type";
 constexpr char kMessageTypeOffer[] = "OFFER";
 constexpr char kMessageTypeAnswer[] = "ANSWER";
 
