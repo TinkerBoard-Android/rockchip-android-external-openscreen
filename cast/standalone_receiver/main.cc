@@ -52,7 +52,9 @@ struct DiscoveryState {
 
 ErrorOr<std::unique_ptr<DiscoveryState>> StartDiscovery(
     TaskRunner* task_runner,
-    const InterfaceInfo& interface) {
+    const InterfaceInfo& interface,
+    const std::string& friendly_name,
+    const std::string& model_name) {
   discovery::Config config;
 
   discovery::Config::NetworkInfo::AddressFamilies supported_address_families =
@@ -80,10 +82,8 @@ ErrorOr<std::unique_ptr<DiscoveryState>> StartDiscovery(
                         interface.hardware_address.end(),
                         [](int e) { return e > 0; }));
   info.unique_id = HexEncode(interface.hardware_address);
-
-  // TODO(jophba): add command line arguments to set these fields.
-  info.model_name = "cast_standalone_receiver";
-  info.friendly_name = "Cast Standalone Receiver";
+  info.friendly_name = friendly_name;
+  info.model_name = model_name;
 
   state->publisher =
       std::make_unique<discovery::DnsSdServicePublisher<ServiceInfo>>(
@@ -126,6 +126,10 @@ options:
     -s, --server-certificate=path-to-cert: Path to PEM file containing a
                            server certificate to be used for TLS authentication.
 
+    -f, --friendly-name: Friendly name to be used for device discovery.
+
+    -m, --model-name: Model name to be used for device discovery.
+
     -t, --tracing: Enable performance tracing logging.
 
     -v, --verbose: Enable verbose logging.
@@ -165,6 +169,8 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   const struct option kArgumentOptions[] = {
       {"private-key", required_argument, nullptr, 'p'},
       {"server-certificate", required_argument, nullptr, 's'},
+      {"friendly-name", required_argument, nullptr, 'f'},
+      {"model-name", required_argument, nullptr, 'm'},
       {"tracing", no_argument, nullptr, 't'},
       {"verbose", no_argument, nullptr, 'v'},
       {"help", no_argument, nullptr, 'h'},
@@ -178,9 +184,11 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   bool discovery_enabled = true;
   std::string private_key_path;
   std::string server_certificate_path;
+  std::string friendly_name = "Cast Standalone Receiver";
+  std::string model_name = "cast_standalone_receiver";
   std::unique_ptr<openscreen::TextTraceLoggingPlatform> trace_logger;
   int ch = -1;
-  while ((ch = getopt_long(argc, argv, "p:s:tvhx", kArgumentOptions,
+  while ((ch = getopt_long(argc, argv, "p:s:f:m:tvhx", kArgumentOptions,
                            nullptr)) != -1) {
     switch (ch) {
       case 'p':
@@ -188,6 +196,12 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
         break;
       case 's':
         server_certificate_path = optarg;
+        break;
+      case 'f':
+        friendly_name = optarg;
+        break;
+      case 'm':
+        friendly_name = optarg;
         break;
       case 't':
         trace_logger = std::make_unique<openscreen::TextTraceLoggingPlatform>();
@@ -239,7 +253,8 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
         OSP_CHECK(cast_agent) << "Failed to start CastAgent.";
 
         if (discovery_enabled) {
-          auto result = StartDiscovery(task_runner, interface);
+          auto result =
+              StartDiscovery(task_runner, interface, friendly_name, model_name);
           OSP_CHECK(result.is_value()) << "Failed to start discovery.";
           discovery_state = std::move(result.value());
         }
