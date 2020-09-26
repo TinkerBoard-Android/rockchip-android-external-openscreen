@@ -102,12 +102,12 @@ ReceiverSession::ReceiverSession(Client* const client,
   OSP_DCHECK(message_port_);
   OSP_DCHECK(environment_);
 
-  message_port_->SetClient(this);
+  message_port_->SetClient(this, kDefaultStreamingReceiverSenderId);
 }
 
 ReceiverSession::~ReceiverSession() {
   ResetReceivers(Client::kEndOfSession);
-  message_port_->SetClient(nullptr);
+  message_port_->ResetClient();
 }
 
 void ReceiverSession::OnMessage(const std::string& sender_id,

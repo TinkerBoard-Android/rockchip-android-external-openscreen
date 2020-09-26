@@ -25,6 +25,8 @@ LoopingFileCastAgent::LoopingFileCastAgent(TaskRunner* task_runner)
     : task_runner_(task_runner) {
   router_ = MakeSerialDelete<VirtualConnectionRouter>(task_runner_,
                                                       &connection_manager_);
+  message_port_ =
+      MakeSerialDelete<CastSocketMessagePort>(task_runner_, router_.get());
   socket_factory_ =
       MakeSerialDelete<SenderSocketFactory>(task_runner_, this, task_runner_);
   connection_factory_ = SerialDeletePtr<TlsConnectionFactory>(
@@ -43,6 +45,7 @@ void LoopingFileCastAgent::Connect(ConnectionSettings settings) {
                           : DeviceMediaPolicy::kAudioOnly;
 
   task_runner_->PostTask([this, policy] {
+    wake_lock_ = ScopedWakeLock::Create(task_runner_);
     socket_factory_->Connect(connection_settings_->receiver_endpoint, policy,
                              router_.get());
   });
@@ -68,7 +71,8 @@ void LoopingFileCastAgent::OnConnected(SenderSocketFactory* factory,
   }
 
   OSP_LOG_INFO << "Received connection from peer at: " << endpoint;
-  message_port_.SetSocket(socket->GetWeakPtr());
+  message_port_->SetSocket(socket->GetWeakPtr());
+  router_->TakeSocket(this, std::move(socket));
   CreateAndStartSession();
 }
 
@@ -117,20 +121,27 @@ void LoopingFileCastAgent::CreateAndStartSession() {
       std::make_unique<Environment>(&Clock::now, task_runner_, IPEndpoint{});
   current_session_ = std::make_unique<SenderSession>(
       connection_settings_->receiver_endpoint.address, this, environment_.get(),
-      &message_port_);
+      message_port_.get());
 
   AudioCaptureConfig audio_config;
   VideoCaptureConfig video_config;
   // Use default display resolution of 1080P.
   video_config.resolutions.emplace_back(DisplayResolution{});
-  current_session_->Negotiate({audio_config}, {video_config});
+
+  OSP_VLOG << "Starting session negotiation.";
+  const Error negotiation_error =
+      current_session_->Negotiate({audio_config}, {video_config});
+  if (!negotiation_error.ok()) {
+    OSP_LOG_ERROR << "Failed to negotiate a session: " << negotiation_error;
+  }
 }
 
 void LoopingFileCastAgent::StopCurrentSession() {
   current_session_.reset();
   environment_.reset();
   file_sender_.reset();
-  message_port_.SetSocket(nullptr);
+  router_->CloseSocket(message_port_->GetSocketId());
+  message_port_->SetSocket(nullptr);
 }
 
 }  // namespace cast

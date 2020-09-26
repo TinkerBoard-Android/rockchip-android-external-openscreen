@@ -127,8 +127,7 @@ class RtpPacketizerTest : public testing::Test {
   // The RtpPacketizer instance under test, plus some surrounding dependencies
   // to generate its input and examine its output.
   const Ssrc ssrc_{GenerateSsrc(true)};
-  const FrameCrypto crypto_{crypto::GenerateRandomBytes16(),
-                            crypto::GenerateRandomBytes16()};
+  const FrameCrypto crypto_{GenerateRandomBytes16(), GenerateRandomBytes16()};
   RtpPacketizer packetizer_{kPayloadType, ssrc_,
                             kMaxRtpPacketSizeForIpv4UdpOnEthernet};
   RtpPacketParser parser_{ssrc_};

@@ -10,7 +10,6 @@
 #include "gtest/gtest.h"
 
 namespace openscreen {
-namespace crypto {
 namespace {
 
 struct NonZero {
@@ -48,5 +47,4 @@ TEST(RandomBytesTest, KeysAreNotIdentical) {
               std::end(keys));
 }
 
-}  // namespace crypto
 }  // namespace openscreen

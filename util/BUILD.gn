@@ -30,6 +30,8 @@ source_set("util") {
     "crypto/digest_sign.h",
     "crypto/openssl_util.cc",
     "crypto/openssl_util.h",
+    "crypto/pem_helpers.cc",
+    "crypto/pem_helpers.h",
     "crypto/random_bytes.cc",
     "crypto/random_bytes.h",
     "crypto/rsa_private_key.cc",

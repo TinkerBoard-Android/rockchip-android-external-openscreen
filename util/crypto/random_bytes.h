@@ -8,12 +8,10 @@
 #include <array>
 
 namespace openscreen {
-namespace crypto {
 
 std::array<uint8_t, 16> GenerateRandomBytes16();
 void GenerateRandomBytes(uint8_t* out, int len);
 
-}  // namespace crypto
 }  // namespace openscreen
 
 #endif  // UTIL_CRYPTO_RANDOM_BYTES_H_

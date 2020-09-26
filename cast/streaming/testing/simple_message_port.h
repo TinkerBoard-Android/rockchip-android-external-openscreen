@@ -20,7 +20,12 @@ namespace cast {
 class SimpleMessagePort : public MessagePort {
  public:
   ~SimpleMessagePort() override {}
-  void SetClient(MessagePort::Client* client) override { client_ = client; }
+  void SetClient(MessagePort::Client* client,
+                 std::string client_sender_id) override {
+    client_ = client;
+  }
+
+  void ResetClient() override { client_ = nullptr; }
 
   void ReceiveMessage(const std::string& message) {
     ReceiveMessage(kCastWebrtcNamespace, message);

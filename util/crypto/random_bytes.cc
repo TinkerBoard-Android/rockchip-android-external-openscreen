@@ -8,7 +8,6 @@
 #include "util/osp_logging.h"
 
 namespace openscreen {
-namespace crypto {
 
 std::array<uint8_t, 16> GenerateRandomBytes16() {
   std::array<uint8_t, 16> result;
@@ -21,5 +20,4 @@ void GenerateRandomBytes(uint8_t* out, int len) {
   OSP_CHECK(RAND_bytes(out, len) == 1);
 }
 
-}  // namespace crypto
 }  // namespace openscreen

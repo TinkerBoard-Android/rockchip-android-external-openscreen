@@ -87,7 +87,6 @@ class CastAgent final : public ReceiverSocketFactory::Client,
   TaskRunner* const task_runner_;
   IPEndpoint receive_endpoint_;
   DeviceAuthNamespaceHandler::CredentialsProvider* credentials_provider_;
-  CastSocketMessagePort message_port_;
   TlsCredentials tls_credentials_;
 
   // Member variables set as part of starting up.
@@ -95,6 +94,7 @@ class CastAgent final : public ReceiverSocketFactory::Client,
   SerialDeletePtr<TlsConnectionFactory> connection_factory_;
   VirtualConnectionManager connection_manager_;
   SerialDeletePtr<VirtualConnectionRouter> router_;
+  SerialDeletePtr<CastSocketMessagePort> message_port_;
   SerialDeletePtr<ReceiverSocketFactory> socket_factory_;
   SerialDeletePtr<ScopedWakeLock> wake_lock_;
 

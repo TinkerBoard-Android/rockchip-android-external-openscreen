@@ -120,6 +120,9 @@ class Error {
     // The certificate failed to chain to a trusted root.
     kErrCertsVerifyGeneric,
 
+    // The certificate was not found in the trust store.
+    kErrCertsVerifyUntrustedCert,
+
     // The CRL is missing or failed to verify.
     kErrCrlInvalid,
 

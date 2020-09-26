@@ -190,6 +190,25 @@ TEST_F(SenderSessionTest, ComplainsIfMissingResolutions) {
             Error(Error::Code::kParameterInvalid, "Invalid configs provided."));
 }
 
+TEST_F(SenderSessionTest, SendsOfferWithZeroBitrateOptions) {
+  VideoCaptureConfig video_config = kVideoCaptureConfigValid;
+  video_config.max_bit_rate = 0;
+  AudioCaptureConfig audio_config = kAudioCaptureConfigValid;
+  audio_config.bit_rate = 0;
+
+  const Error error =
+      session_->Negotiate(std::vector<AudioCaptureConfig>{audio_config},
+                          std::vector<VideoCaptureConfig>{video_config});
+  EXPECT_TRUE(error.ok());
+
+  const auto& messages = message_port_->posted_messages();
+  ASSERT_EQ(1u, messages.size());
+  auto message_body = json::Parse(messages[0]);
+  ASSERT_TRUE(message_body.is_value());
+  const Json::Value offer = std::move(message_body.value());
+  EXPECT_EQ("OFFER", offer["type"].asString());
+}
+
 TEST_F(SenderSessionTest, SendsOfferWithSimpleVideoOnly) {
   const Error error = session_->Negotiate(
       std::vector<AudioCaptureConfig>{},

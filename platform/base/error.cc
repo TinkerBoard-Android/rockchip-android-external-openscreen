@@ -158,6 +158,8 @@ std::ostream& operator<<(std::ostream& os, const Error::Code& code) {
       return os << "ErrCertsDateInvalid";
     case Error::Code::kErrCertsVerifyGeneric:
       return os << "ErrCertsVerifyGeneric";
+    case Error::Code::kErrCertsVerifyUntrustedCert:
+      return os << "kErrCertsVerifyUntrustedCert";
     case Error::Code::kErrCrlInvalid:
       return os << "ErrCrlInvalid";
     case Error::Code::kErrCertsRevoked:

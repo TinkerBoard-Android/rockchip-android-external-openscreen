@@ -59,6 +59,8 @@ Error CastAgent::Start() {
         task_runner_, credentials_provider_);
     router_ = MakeSerialDelete<VirtualConnectionRouter>(task_runner_,
                                                         &connection_manager_);
+    message_port_ =
+        MakeSerialDelete<CastSocketMessagePort>(task_runner_, router_.get());
     router_->AddHandlerForLocalId(kPlatformReceiverId, auth_handler_.get());
     socket_factory_ = MakeSerialDelete<ReceiverSocketFactory>(
         task_runner_, this, router_.get());
@@ -95,12 +97,12 @@ void CastAgent::OnConnected(ReceiverSocketFactory* factory,
   }
 
   OSP_LOG_INFO << "Received connection from peer at: " << endpoint;
-  message_port_.SetSocket(socket->GetWeakPtr());
+  message_port_->SetSocket(socket->GetWeakPtr());
   router_->TakeSocket(this, std::move(socket));
   controller_ =
       std::make_unique<StreamingPlaybackController>(task_runner_, this);
   current_session_ = std::make_unique<ReceiverSession>(
-      controller_.get(), environment_.get(), &message_port_,
+      controller_.get(), environment_.get(), message_port_.get(),
       ReceiverSession::Preferences{});
 }
 
@@ -155,10 +157,10 @@ void CastAgent::OnPlaybackError(StreamingPlaybackController* controller,
 }
 
 void CastAgent::StopCurrentSession() {
-  controller_.reset();
   current_session_.reset();
-  router_->CloseSocket(message_port_.GetSocketId());
-  message_port_.SetSocket(nullptr);
+  controller_.reset();
+  router_->CloseSocket(message_port_->GetSocketId());
+  message_port_->SetSocket(nullptr);
 }
 
 }  // namespace cast

@@ -49,7 +49,7 @@ class FrameCrypto {
  public:
   // Construct with the given 16-bytes AES key and IV mask. Both arguments
   // should be randomly-generated for each new streaming session.
-  // crypto::GenerateRandomBytes() can be used to create them.
+  // GenerateRandomBytes() can be used to create them.
   FrameCrypto(const std::array<uint8_t, 16>& aes_key,
               const std::array<uint8_t, 16>& cast_iv_mask);
 

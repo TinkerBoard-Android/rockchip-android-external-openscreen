@@ -94,16 +94,16 @@ class LoopingFileCastAgent final
   void StopCurrentSession();
 
   // Member variables set as part of construction.
-  std::unique_ptr<Environment> environment_;
+  VirtualConnectionManager connection_manager_;
   TaskRunner* const task_runner_;
-  CastSocketMessagePort message_port_;
+  SerialDeletePtr<VirtualConnectionRouter> router_;
+  SerialDeletePtr<CastSocketMessagePort> message_port_;
+  SerialDeletePtr<SenderSocketFactory> socket_factory_;
+  SerialDeletePtr<TlsConnectionFactory> connection_factory_;
 
   // Member variables set as part of starting up.
+  std::unique_ptr<Environment> environment_;
   absl::optional<ConnectionSettings> connection_settings_;
-  SerialDeletePtr<VirtualConnectionRouter> router_;
-  SerialDeletePtr<TlsConnectionFactory> connection_factory_;
-  VirtualConnectionManager connection_manager_;
-  SerialDeletePtr<SenderSocketFactory> socket_factory_;
   SerialDeletePtr<ScopedWakeLock> wake_lock_;
 
   // Member variables set as part of a sender connection.

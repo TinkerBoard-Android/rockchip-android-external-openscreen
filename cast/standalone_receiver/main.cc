@@ -118,7 +118,13 @@ options:
     interface
         Specifies the network interface to bind to. The interface is
         looked up from the system interface registry.
-        mandatory, as it must be known for publishing discovery.
+        Mandatory, as it must be known for publishing discovery.
+
+    -p, --private-key=path-to-key: Path to OpenSSL-generated private key to be
+                    used for TLS authentication.
+
+    -s, --server-certificate=path-to-cert: Path to PEM file containing a
+                           server certificate to be used for TLS authentication.
 
     -t, --tracing: Enable performance tracing logging.
 
@@ -157,6 +163,8 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   // being exposed, consider if it applies to the standalone receiver,
   // standalone sender, osp demo, and test_main argument options.
   const struct option kArgumentOptions[] = {
+      {"private-key", required_argument, nullptr, 'p'},
+      {"server-certificate", required_argument, nullptr, 's'},
       {"tracing", no_argument, nullptr, 't'},
       {"verbose", no_argument, nullptr, 'v'},
       {"help", no_argument, nullptr, 'h'},
@@ -168,11 +176,19 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
 
   bool is_verbose = false;
   bool discovery_enabled = true;
+  std::string private_key_path;
+  std::string server_certificate_path;
   std::unique_ptr<openscreen::TextTraceLoggingPlatform> trace_logger;
   int ch = -1;
-  while ((ch = getopt_long(argc, argv, "tvhx", kArgumentOptions, nullptr)) !=
-         -1) {
+  while ((ch = getopt_long(argc, argv, "p:s:tvhx", kArgumentOptions,
+                           nullptr)) != -1) {
     switch (ch) {
+      case 'p':
+        private_key_path = optarg;
+        break;
+      case 's':
+        server_certificate_path = optarg;
+        break;
       case 't':
         trace_logger = std::make_unique<openscreen::TextTraceLoggingPlatform>();
         break;
@@ -186,6 +202,11 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
         LogUsage(argv[0]);
         return 1;
     }
+  }
+  if (private_key_path.empty() != server_certificate_path.empty()) {
+    OSP_LOG_ERROR << "If a private key or server certificate path is provided, "
+                     "both are required.";
+    return 1;
   }
   SetLogLevel(is_verbose ? openscreen::LogLevel::kVerbose
                          : openscreen::LogLevel::kInfo);
@@ -202,8 +223,15 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   OSP_CHECK(interface_name && strlen(interface_name) > 0)
       << "No interface name provided.";
 
-  auto creds = GenerateCredentials(
-      absl::StrCat("Standalone Receiver on ", interface_name));
+  std::string device_id =
+      absl::StrCat("Standalone Receiver on ", interface_name);
+  ErrorOr<GeneratedCredentials> creds = Error::Code::kEVPInitializationError;
+  if (private_key_path.empty()) {
+    creds = GenerateCredentials(device_id);
+  } else {
+    creds = GenerateCredentials(device_id, private_key_path,
+                                server_certificate_path);
+  }
   OSP_CHECK(creds.is_value()) << creds.error();
   task_runner->PostTask(
       [&, interface = GetInterfaceInfoFromName(interface_name)] {

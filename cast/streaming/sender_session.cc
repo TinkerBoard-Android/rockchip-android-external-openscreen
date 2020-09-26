@@ -34,19 +34,22 @@ namespace cast {
 namespace {
 
 AudioStream CreateStream(int index, const AudioCaptureConfig& config) {
-  return AudioStream{Stream{index,
-                            Stream::Type::kAudioSource,
-                            config.channels,
-                            CodecToString(config.codec),
-                            GetPayloadType(config.codec),
-                            GenerateSsrc(true /*high_priority*/),
-                            config.target_playout_delay,
-                            crypto::GenerateRandomBytes16(),
-                            crypto::GenerateRandomBytes16(),
-                            false /* receiver_rtcp_event_log */,
-                            {} /* receiver_rtcp_dscp */,
-                            config.sample_rate},
-                     config.bit_rate};
+  return AudioStream{
+      Stream{index,
+             Stream::Type::kAudioSource,
+             config.channels,
+             CodecToString(config.codec),
+             GetPayloadType(config.codec),
+             GenerateSsrc(true /*high_priority*/),
+             config.target_playout_delay,
+             GenerateRandomBytes16(),
+             GenerateRandomBytes16(),
+             false /* receiver_rtcp_event_log */,
+             {} /* receiver_rtcp_dscp */,
+             config.sample_rate},
+      (config.bit_rate >= capture_recommendations::kDefaultAudioMinBitRate)
+          ? config.bit_rate
+          : capture_recommendations::kDefaultAudioMaxBitRate};
 }
 
 Resolution ToResolution(const DisplayResolution& display_resolution) {
@@ -67,17 +70,20 @@ VideoStream CreateStream(int index, const VideoCaptureConfig& config) {
              GetPayloadType(config.codec),
              GenerateSsrc(false /*high_priority*/),
              config.target_playout_delay,
-             crypto::GenerateRandomBytes16(),
-             crypto::GenerateRandomBytes16(),
+             GenerateRandomBytes16(),
+             GenerateRandomBytes16(),
              false /* receiver_rtcp_event_log */,
              {} /* receiver_rtcp_dscp */,
              kRtpVideoTimebase},
       SimpleFraction{config.max_frame_rate.numerator,
                      config.max_frame_rate.denominator},
-      config.max_bit_rate,
-      {},
-      {},
-      {},  //  protection, profile, level
+      (config.max_bit_rate >
+       capture_recommendations::kDefaultVideoBitRateLimits.minimum)
+          ? config.max_bit_rate
+          : capture_recommendations::kDefaultVideoBitRateLimits.maximum,
+      {},  //  protection
+      {},  //  profile
+      {},  //  protection
       std::move(resolutions),
       {} /* error_recovery mode, always "castv2" */
   };
@@ -111,7 +117,7 @@ Offer CreateOffer(const std::vector<AudioCaptureConfig>& audio_configs,
 }
 
 bool IsValidAudioCaptureConfig(const AudioCaptureConfig& config) {
-  return config.channels >= 1 && config.bit_rate > 0;
+  return config.channels >= 1 && config.bit_rate >= 0;
 }
 
 bool IsValidResolution(const DisplayResolution& resolution) {
@@ -121,7 +127,10 @@ bool IsValidResolution(const DisplayResolution& resolution) {
 
 bool IsValidVideoCaptureConfig(const VideoCaptureConfig& config) {
   return config.max_frame_rate.numerator > 0 &&
-         config.max_frame_rate.denominator > 0 && config.max_bit_rate > 0 &&
+         config.max_frame_rate.denominator > 0 &&
+         ((config.max_bit_rate == 0) ||
+          (config.max_bit_rate >=
+           capture_recommendations::kDefaultVideoBitRateLimits.minimum)) &&
          !config.resolutions.empty() &&
          std::all_of(config.resolutions.begin(), config.resolutions.end(),
                      IsValidResolution);
@@ -162,11 +171,11 @@ SenderSession::SenderSession(IPAddress remote_address,
   OSP_DCHECK(message_port_);
   OSP_DCHECK(environment_);
 
-  message_port_->SetClient(this);
+  message_port_->SetClient(this, "sender-" + std::to_string(session_id_));
 }
 
 SenderSession::~SenderSession() {
-  message_port_->SetClient(nullptr);
+  message_port_->ResetClient();
 }
 
 Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
@@ -194,7 +203,10 @@ Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
   message_body[kOfferMessageBody] = std::move(json_offer.value());
 
   Message message;
-  message.sender_id = std::to_string(session_id_);
+  // Currently we don't have a way to discover the ID of the receiver we
+  // are connected to, since we have to send the first message.
+  // TODO(jophba): migrate to discovered receiver ID when available.
+  message.sender_id = kDefaultStreamingReceiverSenderId;
   message.message_namespace = kCastWebrtcNamespace;
   message.body = std::move(message_body);
   SendMessage(&message);

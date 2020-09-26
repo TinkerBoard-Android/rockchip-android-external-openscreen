@@ -5,7 +5,9 @@
 #include "cast/receiver/channel/static_credentials.h"
 
 #include <openssl/mem.h>
+#include <openssl/pem.h>
 
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <utility>
@@ -19,47 +21,26 @@ namespace openscreen {
 namespace cast {
 namespace {
 
+using FileUniquePtr = std::unique_ptr<FILE, decltype(&fclose)>;
+
 constexpr int kThreeDaysInSeconds = 3 * 24 * 60 * 60;
 constexpr auto kCertificateDuration = std::chrono::seconds(kThreeDaysInSeconds);
 
-}  // namespace
-
-StaticCredentialsProvider::StaticCredentialsProvider() = default;
-StaticCredentialsProvider::StaticCredentialsProvider(
-    DeviceCredentials device_creds,
-    std::vector<uint8_t> tls_cert_der)
-    : device_creds(std::move(device_creds)),
-      tls_cert_der(std::move(tls_cert_der)) {}
-
-StaticCredentialsProvider::StaticCredentialsProvider(
-    StaticCredentialsProvider&&) = default;
-StaticCredentialsProvider& StaticCredentialsProvider::operator=(
-    StaticCredentialsProvider&&) = default;
-StaticCredentialsProvider::~StaticCredentialsProvider() = default;
-
 ErrorOr<GeneratedCredentials> GenerateCredentials(
-    absl::string_view device_certificate_id) {
-  GeneratedCredentials credentials;
-
-  // Device cert chain generation.
-  bssl::UniquePtr<EVP_PKEY> root_key = GenerateRsaKeyPair();
+    std::string device_certificate_id,
+    EVP_PKEY* root_key,
+    X509* root_cert) {
+  OSP_CHECK(root_key);
+  OSP_CHECK(root_cert);
   bssl::UniquePtr<EVP_PKEY> intermediate_key = GenerateRsaKeyPair();
   bssl::UniquePtr<EVP_PKEY> device_key = GenerateRsaKeyPair();
-  OSP_CHECK(root_key);
   OSP_CHECK(intermediate_key);
   OSP_CHECK(device_key);
-
-  ErrorOr<bssl::UniquePtr<X509>> root_cert_or_error =
-      CreateSelfSignedX509Certificate("Cast Root CA", kCertificateDuration,
-                                      *root_key, GetWallTimeSinceUnixEpoch(),
-                                      true);
-  OSP_CHECK(root_cert_or_error);
-  bssl::UniquePtr<X509> root_cert = std::move(root_cert_or_error.value());
 
   ErrorOr<bssl::UniquePtr<X509>> intermediate_cert_or_error =
       CreateSelfSignedX509Certificate(
           "Cast Intermediate", kCertificateDuration, *intermediate_key,
-          GetWallTimeSinceUnixEpoch(), true, root_cert.get(), root_key.get());
+          GetWallTimeSinceUnixEpoch(), true, root_cert, root_key);
   OSP_CHECK(intermediate_cert_or_error);
   bssl::UniquePtr<X509> intermediate_cert =
       std::move(intermediate_cert_or_error.value());
@@ -88,10 +69,10 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
   i2d_X509(intermediate_cert.get(), &out);
   device_creds.certs.emplace_back(std::move(cert_serial));
 
-  cert_length = i2d_X509(root_cert.get(), nullptr);
+  cert_length = i2d_X509(root_cert, nullptr);
   std::vector<uint8_t> trust_anchor_der(cert_length);
   out = &trust_anchor_der[0];
-  i2d_X509(root_cert.get(), &out);
+  i2d_X509(root_cert, &out);
 
   // TLS key pair + certificate generation.
   bssl::UniquePtr<EVP_PKEY> tls_key = GenerateRsaKeyPair();
@@ -134,6 +115,67 @@ ErrorOr<GeneratedCredentials> GenerateCredentials(
       TlsCredentials{std::move(tls_key_serial), std::move(tls_pub_serial),
                      std::move(tls_cert_serial)},
       std::move(trust_anchor_der)};
+}
+
+bssl::UniquePtr<X509> GenerateRootCert(const EVP_PKEY& root_key) {
+  ErrorOr<bssl::UniquePtr<X509>> root_cert_or_error =
+      CreateSelfSignedX509Certificate("Cast Root CA", kCertificateDuration,
+                                      root_key, GetWallTimeSinceUnixEpoch(),
+                                      true);
+  OSP_CHECK(root_cert_or_error);
+  return std::move(root_cert_or_error.value());
+}
+}  // namespace
+
+StaticCredentialsProvider::StaticCredentialsProvider() = default;
+StaticCredentialsProvider::StaticCredentialsProvider(
+    DeviceCredentials device_creds,
+    std::vector<uint8_t> tls_cert_der)
+    : device_creds(std::move(device_creds)),
+      tls_cert_der(std::move(tls_cert_der)) {}
+
+StaticCredentialsProvider::StaticCredentialsProvider(
+    StaticCredentialsProvider&&) = default;
+StaticCredentialsProvider& StaticCredentialsProvider::operator=(
+    StaticCredentialsProvider&&) = default;
+StaticCredentialsProvider::~StaticCredentialsProvider() = default;
+
+ErrorOr<GeneratedCredentials> GenerateCredentials(
+    const std::string& device_certificate_id) {
+  bssl::UniquePtr<EVP_PKEY> root_key = GenerateRsaKeyPair();
+  OSP_CHECK(root_key);
+
+  bssl::UniquePtr<X509> root_cert = GenerateRootCert(*root_key);
+  OSP_CHECK(root_cert);
+
+  return GenerateCredentials(device_certificate_id, root_key.get(),
+                             root_cert.get());
+}
+
+ErrorOr<GeneratedCredentials> GenerateCredentials(
+    const std::string& device_certificate_id,
+    const std::string& private_key_path,
+    const std::string& server_certificate_path) {
+  OSP_CHECK(!private_key_path.empty() && !server_certificate_path.empty());
+
+  FileUniquePtr key_file(fopen(private_key_path.c_str(), "r"), &fclose);
+  if (!key_file) {
+    return Error(Error::Code::kParameterInvalid,
+                 "Missing private key file path");
+  }
+  bssl::UniquePtr<EVP_PKEY> root_key(PEM_read_PrivateKey(
+      key_file.get(), nullptr /* x */, nullptr /* cb */, nullptr /* u */));
+
+  FileUniquePtr cert_file(fopen(server_certificate_path.c_str(), "r"), &fclose);
+  if (!cert_file) {
+    return Error(Error::Code::kParameterInvalid,
+                 "Missing server certificate file path");
+  }
+  bssl::UniquePtr<X509> root_cert(PEM_read_X509(
+      cert_file.get(), nullptr /* x */, nullptr /* cb */, nullptr /* u */));
+
+  return GenerateCredentials(device_certificate_id, root_key.get(),
+                             root_cert.get());
 }
 
 }  // namespace cast

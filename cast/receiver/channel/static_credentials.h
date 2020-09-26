@@ -6,6 +6,7 @@
 #define CAST_RECEIVER_CHANNEL_STATIC_CREDENTIALS_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -53,7 +54,12 @@ struct GeneratedCredentials {
 // stored in private_key_der.h. The certificate is valid for
 // kCertificateDuration from when this function is called.
 ErrorOr<GeneratedCredentials> GenerateCredentials(
-    absl::string_view device_certificate_id);
+    const std::string& device_certificate_id);
+
+ErrorOr<GeneratedCredentials> GenerateCredentials(
+    const std::string& device_certificate_id,
+    const std::string& private_key_path,
+    const std::string& server_certificate_path);
 
 }  // namespace cast
 }  // namespace openscreen
