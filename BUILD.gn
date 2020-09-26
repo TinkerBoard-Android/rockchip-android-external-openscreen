@@ -72,14 +72,18 @@ source_set("openscreen_unittests_all") {
     "cast/sender:unittests",
     "cast/streaming:unittests",
     "cast/test:unittests",
-    "discovery:unittests",
     "platform:unittests",
     "third_party/abseil",
     "util:unittests",
   ]
 
   if (!build_with_chromium && is_posix) {
-    public_deps += [ "cast/test:make_crl_tests($host_toolchain)" ]
+    public_deps += [
+      "cast/test:make_crl_tests($host_toolchain)",
+
+      # TODO(crbug.com/1132604): Discovery unittests fail in Chrome.
+      "discovery:unittests",
+    ]
   }
 
   if (!is_mac) {
