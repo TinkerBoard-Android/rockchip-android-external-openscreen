@@ -25,9 +25,8 @@ std::vector<std::string> ReadCertificatesFromPemFile(
   char* name;
   char* header;
   unsigned char* data;
-  int64_t length;
-  while (PEM_read(fp, &name, &header, &data,
-                  reinterpret_cast<long*>(&length)) == 1) {
+  long length;  // NOLINT
+  while (PEM_read(fp, &name, &header, &data, &length) == 1) {
     if (absl::StartsWith(name, "CERTIFICATE")) {
       certs.emplace_back(reinterpret_cast<char*>(data), length);
     }
@@ -48,9 +47,8 @@ bssl::UniquePtr<EVP_PKEY> ReadKeyFromPemFile(absl::string_view filename) {
   char* name;
   char* header;
   unsigned char* data;
-  int64_t length;
-  while (PEM_read(fp, &name, &header, &data,
-                  reinterpret_cast<long*>(&length)) == 1) {
+  long length;  // NOLINT
+  while (PEM_read(fp, &name, &header, &data, &length) == 1) {
     if (absl::StartsWith(name, "RSA PRIVATE KEY")) {
       OSP_DCHECK(!pkey);
       CBS cbs;

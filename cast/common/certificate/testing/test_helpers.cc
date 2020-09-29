@@ -33,9 +33,8 @@ SignatureTestData ReadSignatureTestData(absl::string_view filename) {
   char* name;
   char* header;
   unsigned char* data;
-  int64_t length;
-  while (PEM_read(fp, &name, &header, &data,
-                  reinterpret_cast<long*>(&length)) == 1) {
+  long length;  // NOLINT
+  while (PEM_read(fp, &name, &header, &data, &length) == 1) {
     if (strcmp(name, "MESSAGE") == 0) {
       OSP_DCHECK(!result.message.data);
       result.message.data = data;
