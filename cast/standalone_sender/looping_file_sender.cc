@@ -4,6 +4,8 @@
 
 #include "cast/standalone_sender/looping_file_sender.h"
 
+#include "util/trace_logging.h"
+
 namespace openscreen {
 namespace cast {
 
@@ -85,6 +87,7 @@ void LoopingFileSender::ControlForNetworkCongestion() {
 
 void LoopingFileSender::SendFileAgain() {
   OSP_LOG_INFO << "Sending " << path_ << " (starts in one second)...";
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
 
   OSP_DCHECK_EQ(num_capturers_running_, 0);
   num_capturers_running_ = 2;
@@ -103,12 +106,14 @@ void LoopingFileSender::SendFileAgain() {
 void LoopingFileSender::OnAudioData(const float* interleaved_samples,
                                     int num_samples,
                                     Clock::time_point capture_time) {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
   latest_frame_time_ = std::max(capture_time, latest_frame_time_);
   audio_encoder_.EncodeAndSend(interleaved_samples, num_samples, capture_time);
 }
 
 void LoopingFileSender::OnVideoFrame(const AVFrame& av_frame,
                                      Clock::time_point capture_time) {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
   latest_frame_time_ = std::max(capture_time, latest_frame_time_);
   StreamingVp8Encoder::VideoFrame frame{};
   frame.width = av_frame.width - av_frame.crop_left - av_frame.crop_right;

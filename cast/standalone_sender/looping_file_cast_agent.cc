@@ -12,6 +12,7 @@
 #include "cast/streaming/capture_recommendations.h"
 #include "cast/streaming/constants.h"
 #include "cast/streaming/offer_messages.h"
+#include "util/trace_logging.h"
 
 namespace openscreen {
 namespace cast {
@@ -39,6 +40,7 @@ LoopingFileCastAgent::LoopingFileCastAgent(TaskRunner* task_runner)
 LoopingFileCastAgent::~LoopingFileCastAgent() = default;
 
 void LoopingFileCastAgent::Connect(ConnectionSettings settings) {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
   connection_settings_ = std::move(settings);
   const auto policy = connection_settings_->should_include_video
                           ? DeviceMediaPolicy::kIncludesVideo
@@ -65,6 +67,7 @@ void LoopingFileCastAgent::Stop() {
 void LoopingFileCastAgent::OnConnected(SenderSocketFactory* factory,
                                        const IPEndpoint& endpoint,
                                        std::unique_ptr<CastSocket> socket) {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
   if (current_session_) {
     OSP_LOG_WARN << "Already connected, dropping peer at: " << endpoint;
     return;
@@ -117,6 +120,7 @@ void LoopingFileCastAgent::OnError(const SenderSession* session, Error error) {
 }
 
 void LoopingFileCastAgent::CreateAndStartSession() {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneSender);
   environment_ =
       std::make_unique<Environment>(&Clock::now, task_runner_, IPEndpoint{});
   current_session_ = std::make_unique<SenderSession>(

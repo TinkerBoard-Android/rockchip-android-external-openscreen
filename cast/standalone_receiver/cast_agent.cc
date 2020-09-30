@@ -19,6 +19,7 @@
 #include "platform/base/tls_listen_options.h"
 #include "util/json/json_serialization.h"
 #include "util/osp_logging.h"
+#include "util/trace_logging.h"
 
 namespace openscreen {
 namespace cast {
@@ -50,6 +51,7 @@ CastAgent::CastAgent(
 CastAgent::~CastAgent() = default;
 
 Error CastAgent::Start() {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneReceiver);
   OSP_CHECK(!current_session_);
 
   task_runner_->PostTask([this] {
@@ -91,6 +93,7 @@ Error CastAgent::Stop() {
 void CastAgent::OnConnected(ReceiverSocketFactory* factory,
                             const IPEndpoint& endpoint,
                             std::unique_ptr<CastSocket> socket) {
+  TRACE_DEFAULT_SCOPED(TraceCategory::kStandaloneReceiver);
   if (current_session_) {
     OSP_LOG_WARN << "Already connected, dropping peer at: " << endpoint;
     return;

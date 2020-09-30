@@ -53,8 +53,6 @@ StreamingPlaybackController::StreamingPlaybackController(
 }
 #endif  // defined(CAST_STANDALONE_RECEIVER_HAVE_EXTERNAL_LIBS)
 
-// TODO(jophba): add async tracing to streaming implementation for exposing
-// how long the OFFER/ANSWER and receiver startup takes.
 void StreamingPlaybackController::OnNegotiated(
     const ReceiverSession* session,
     ReceiverSession::ConfiguredReceivers receivers) {
