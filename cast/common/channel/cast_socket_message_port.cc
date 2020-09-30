@@ -9,6 +9,7 @@
 #include "cast/common/channel/message_util.h"
 #include "cast/common/channel/proto/cast_channel.pb.h"
 #include "cast/common/channel/virtual_connection.h"
+#include "cast/common/channel/virtual_connection_manager.h"
 
 namespace openscreen {
 namespace cast {
@@ -16,7 +17,9 @@ namespace cast {
 CastSocketMessagePort::CastSocketMessagePort(VirtualConnectionRouter* router)
     : router_(router) {}
 
-CastSocketMessagePort::~CastSocketMessagePort() = default;
+CastSocketMessagePort::~CastSocketMessagePort() {
+  ResetClient();
+}
 
 // NOTE: we assume here that this message port is already the client for
 // the passed in socket, so leave the socket's client unchanged. However,
@@ -34,14 +37,22 @@ int CastSocketMessagePort::GetSocketId() {
 
 void CastSocketMessagePort::SetClient(MessagePort::Client* client,
                                       std::string client_sender_id) {
+  ResetClient();
+
   client_ = client;
   client_sender_id_ = std::move(client_sender_id);
   router_->AddHandlerForLocalId(client_sender_id_, this);
 }
 
 void CastSocketMessagePort::ResetClient() {
+  if (!client_) {
+    return;
+  }
+
   client_ = nullptr;
   router_->RemoveHandlerForLocalId(client_sender_id_);
+  router_->manager()->RemoveConnectionsByLocalId(
+      client_sender_id_, VirtualConnection::CloseReason::kClosedBySelf);
   client_sender_id_.clear();
 }
 
@@ -49,26 +60,27 @@ void CastSocketMessagePort::PostMessage(
     const std::string& destination_sender_id,
     const std::string& message_namespace,
     const std::string& message) {
-  ::cast::channel::CastMessage cast_message;
-  cast_message.set_protocol_version(::cast::channel::CastMessage::CASTV2_1_0);
-  cast_message.set_namespace_(message_namespace.data(),
-                              message_namespace.size());
-  cast_message.set_source_id(client_sender_id_.data(),
-                             client_sender_id_.size());
-  cast_message.set_destination_id(destination_sender_id.data(),
-                                  destination_sender_id.size());
-  cast_message.set_payload_type(::cast::channel::CastMessage::STRING);
-  cast_message.set_payload_utf8(message.data(), message.size());
+  if (!client_) {
+    OSP_DLOG_WARN << "Not posting message due to nullptr client_";
+    return;
+  }
 
   if (!socket_) {
     client_->OnError(Error::Code::kAlreadyClosed);
     return;
   }
 
-  // TODO(jophba): migrate to using VirtualConnectionRouter::Send().
-  Error error = socket_->Send(cast_message);
-  if (!error.ok()) {
-    client_->OnError(error);
+  VirtualConnection connection{client_sender_id_, destination_sender_id,
+                               socket_->socket_id()};
+  if (!router_->manager()->GetConnectionData(connection)) {
+    router_->manager()->AddConnection(connection,
+                                      VirtualConnection::AssociatedData{});
+  }
+
+  const Error send_error = router_->Send(
+      std::move(connection), MakeSimpleUTF8Message(message_namespace, message));
+  if (!send_error.ok()) {
+    client_->OnError(std::move(send_error));
   }
 }
 
@@ -78,6 +90,11 @@ void CastSocketMessagePort::OnMessage(VirtualConnectionRouter* router,
   OSP_DCHECK(router == router_);
   OSP_DCHECK(socket_.get() == socket);
   OSP_DVLOG << "Received a cast socket message";
+  if (!client_) {
+    OSP_DLOG_WARN << "Dropping message due to nullptr client_";
+    return;
+  }
+
   client_->OnMessage(message.source_id(), message.namespace_(),
                      message.payload_utf8());
 }
