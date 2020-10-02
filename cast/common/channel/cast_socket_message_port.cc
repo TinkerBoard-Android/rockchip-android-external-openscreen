@@ -32,7 +32,7 @@ void CastSocketMessagePort::SetSocket(WeakPtr<CastSocket> socket) {
 }
 
 int CastSocketMessagePort::GetSocketId() {
-  return socket_ ? socket_->socket_id() : -1;
+  return ToCastSocketId(socket_.get());
 }
 
 void CastSocketMessagePort::SetClient(MessagePort::Client* client,
