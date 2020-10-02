@@ -459,6 +459,11 @@ void MdnsQuerier::ProcessRecord(const MdnsRecord& record) {
     return;
   }
 
+  // Ignore NSEC records if the embedder has configured us to do so.
+  if (config_.ignore_nsec_responses && record.dns_type() == DnsType::kNSEC) {
+    return;
+  }
+
   // Get the types which the received record is associated with. In most cases
   // this will only be the type of the provided record, but in the case of
   // NSEC records this will be all records which the record dictates the
