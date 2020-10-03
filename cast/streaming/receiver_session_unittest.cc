@@ -202,6 +202,20 @@ constexpr char kInvalidJsonOfferMessage[] = R"({
   }
 })";
 
+constexpr char kMissingMandatoryFieldOfferMessage[] = R"({
+  "type": "OFFER",
+  "seqNum": 1337
+})";
+
+constexpr char kMissingSeqNumOfferMessage[] = R"({
+  "type": "OFFER",
+  "offer": {
+    "castMode": "mirroring",
+    "receiverGetStatus": true,
+    "supportedStreams": []
+  }
+})";
+
 constexpr char kValidJsonInvalidFormatOfferMessage[] = R"({
   "type": "OFFER",
   "seqNum": 1337,
@@ -526,27 +540,46 @@ TEST_F(ReceiverSessionTest, HandlesNoValidStreams) {
 
 TEST_F(ReceiverSessionTest, HandlesMalformedOffer) {
   // Note that unlike when we simply don't select any streams, when the offer
-  // is actually completely invalid we call OnError.
-  EXPECT_CALL(client_,
-              OnError(session_.get(), Error(Error::Code::kJsonParseError)));
+  // is not valid JSON we actually have no way of knowing it's an offer at all,
+  // so we call OnError and do not reply with an Answer.
+  EXPECT_CALL(client_, OnError(session_.get(), _));
 
   message_port_->ReceiveMessage(kInvalidJsonOfferMessage);
 }
 
+TEST_F(ReceiverSessionTest, HandlesMissingSeqNumInOffer) {
+  // If the OFFER is missing a sequence number it gets rejected before being
+  // parsed as an OFFER, since the sender expects all messages to come back
+  // with a sequence number.
+  message_port_->ReceiveMessage(kMissingSeqNumOfferMessage);
+}
+
+TEST_F(ReceiverSessionTest, HandlesOfferMissingMandatoryFields) {
+  // If the OFFER is missing mandatory fields, we notify the client as well as
+  // reply with an error-case Answer.
+  EXPECT_CALL(client_, OnError(session_.get(), _));
+
+  message_port_->ReceiveMessage(kMissingMandatoryFieldOfferMessage);
+  const auto& messages = message_port_->posted_messages();
+  EXPECT_EQ(1u, messages.size());
+
+  auto message_body = json::Parse(messages[0]);
+  ExpectIsErrorAnswerMessage(message_body);
+}
+
 TEST_F(ReceiverSessionTest, HandlesImproperlyFormattedOffer) {
-  EXPECT_CALL(client_,
-              OnError(session_.get(),
-                      Error(Error::Code::kJsonParseError,
-                            "Failed to parse supported streams in offer")));
+  EXPECT_CALL(client_, OnError(session_.get(), _));
 
   message_port_->ReceiveMessage(kValidJsonInvalidFormatOfferMessage);
+  const auto& messages = message_port_->posted_messages();
+  EXPECT_EQ(1u, messages.size());
+
+  auto message_body = json::Parse(messages[0]);
+  ExpectIsErrorAnswerMessage(message_body);
 }
 
 TEST_F(ReceiverSessionTest, HandlesNullOffer) {
-  EXPECT_CALL(client_, OnError(session_.get(),
-                               Error(Error::Code::kJsonParseError,
-                                     "Received offer missing offer body")));
-
+  EXPECT_CALL(client_, OnError(session_.get(), _));
   message_port_->ReceiveMessage(kNullJsonOfferMessage);
 }
 

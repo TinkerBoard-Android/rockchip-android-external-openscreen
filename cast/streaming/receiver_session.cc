@@ -122,7 +122,6 @@ void ReceiverSession::OnMessage(const std::string& sender_id,
   }
   OSP_DVLOG << "Received a message: " << message;
 
-  // TODO(jophba): add sender connected/disconnected messaging.
   int sequence_number;
   if (!json::ParseAndValidateInt(message_json.value()[kSequenceNumber],
                                  &sequence_number)) {
@@ -140,12 +139,6 @@ void ReceiverSession::OnMessage(const std::string& sender_id,
                          sequence_number};
   if (key == kMessageTypeOffer) {
     parsed_message.body = std::move(message_json.value()[kOfferMessageBody]);
-    if (parsed_message.body.isNull()) {
-      client_->OnError(this, Error(Error::Code::kJsonParseError,
-                                   "Received offer missing offer body"));
-      OSP_DLOG_WARN << "Invalid message offer body";
-      return;
-    }
     OnOffer(&parsed_message);
   }
 }
@@ -159,6 +152,9 @@ void ReceiverSession::OnOffer(Message* message) {
   if (!offer) {
     client_->OnError(this, offer.error());
     OSP_DLOG_WARN << "Could not parse offer" << offer.error();
+    message->body = CreateInvalidAnswerMessage(
+        Error(Error::Code::kParseError, "Failed to parse malformed OFFER"));
+    SendMessage(message);
     return;
   }
 

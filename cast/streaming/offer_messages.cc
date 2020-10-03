@@ -371,6 +371,9 @@ ErrorOr<Json::Value> VideoStream::ToJson() const {
 
 // static
 ErrorOr<Offer> Offer::Parse(const Json::Value& root) {
+  if (!root.isObject()) {
+    return json::CreateParseError("null offer");
+  }
   CastMode cast_mode = CastMode::Parse(root["castMode"].asString());
 
   const ErrorOr<bool> get_status = json::ParseBool(root, "receiverGetStatus");
