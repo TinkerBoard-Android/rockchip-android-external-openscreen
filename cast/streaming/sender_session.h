@@ -138,9 +138,6 @@ class SenderSession final : public MessagePort::Client {
   // Sends a message over the message port.
   void SendMessage(Message* message);
 
-  // The cast session ID for this session.
-  const int session_id_;
-
   // The sender ID of the Receiver for this session.
   std::string receiver_sender_id_;
 

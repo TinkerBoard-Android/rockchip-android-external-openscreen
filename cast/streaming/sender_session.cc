@@ -8,15 +8,13 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <chrono>
 #include <iterator>
-#include <limits>
-#include <random>
 #include <string>
 #include <utility>
 
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
+#include "cast/common/channel/message_util.h"
 #include "cast/common/public/message_port.h"
 #include "cast/streaming/capture_recommendations.h"
 #include "cast/streaming/environment.h"
@@ -144,14 +142,6 @@ bool AreAllValid(const std::vector<AudioCaptureConfig>& audio_configs,
                      IsValidVideoCaptureConfig);
 }
 
-int GenerateSessionId() {
-  static auto& rd = *new std::random_device();
-  static auto& gen = *new std::mt19937(rd());
-  static auto& dist =
-      *new std::uniform_int_distribution<>(1, std::numeric_limits<int>::max());
-
-  return dist(gen);
-}
 }  // namespace
 
 SenderSession::Client::~Client() = default;
@@ -160,18 +150,16 @@ SenderSession::SenderSession(IPAddress remote_address,
                              Client* const client,
                              Environment* environment,
                              MessagePort* message_port)
-    : session_id_(GenerateSessionId()),
-      remote_address_(remote_address),
+    : remote_address_(remote_address),
       client_(client),
       environment_(environment),
       message_port_(message_port),
       packet_router_(environment_) {
-  OSP_DCHECK(session_id_ > 0);
   OSP_DCHECK(client_);
   OSP_DCHECK(message_port_);
   OSP_DCHECK(environment_);
 
-  message_port_->SetClient(this, "sender-" + std::to_string(session_id_));
+  message_port_->SetClient(this, MakeUniqueSessionId("sender"));
 }
 
 SenderSession::~SenderSession() {
