@@ -152,7 +152,8 @@ class CastSocketE2ETest : public ::testing::Test {
             .release());
     sender_factory_->set_factory(sender_tls_factory_.get());
 
-    ErrorOr<GeneratedCredentials> creds = GenerateCredentials("Device ID");
+    ErrorOr<GeneratedCredentials> creds =
+        GenerateCredentialsForTesting("Device ID");
     ASSERT_TRUE(creds.is_value());
     credentials_ = std::move(creds.value());
 

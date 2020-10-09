@@ -123,10 +123,22 @@ options:
         Mandatory, as it must be known for publishing discovery.
 
     -p, --private-key=path-to-key: Path to OpenSSL-generated private key to be
-                    used for TLS authentication.
+                    used for TLS authentication. If a private key is not
+                    provided, a randomly generated one will be used for this
+                    session.
 
-    -s, --server-certificate=path-to-cert: Path to PEM file containing a
-                           server certificate to be used for TLS authentication.
+    -s, --developer-certificate=path-to-cert: Path to PEM file containing a
+                           developer generated server root TLS certificate.
+                           If a root server certificate is not provided, one
+                           will be generated using a randomly generated
+                           private key. Note that if a certificate path is
+                           passed, the private key path is a mandatory field.
+
+    -g, --generate-credentials: Instructs the binary to generate a private key
+                                and self-signed root certificate with the CA
+                                bit set to true, and then exit. The resulting
+                                private key and certificate can then be used as
+                                values for the -p and -s flags.
 
     -f, --friendly-name: Friendly name to be used for device discovery.
 
@@ -164,13 +176,23 @@ InterfaceInfo GetInterfaceInfoFromName(const char* name) {
 }
 
 int RunStandaloneReceiver(int argc, char* argv[]) {
+#if !defined(CAST_ALLOW_DEVELOPER_CERTIFICATE)
+  OSP_LOG_FATAL
+      << "It compiled! However cast_receiver currently only supports using a "
+         "passed-in certificate and private key, and must be built with "
+         "cast_allow_developer_certificate=true set in the GN args to "
+         "actually do anything interesting.";
+  return 1;
+#endif
+
   // A note about modifying command line arguments: consider uniformity
   // between all Open Screen executables. If it is a platform feature
   // being exposed, consider if it applies to the standalone receiver,
   // standalone sender, osp demo, and test_main argument options.
   const struct option kArgumentOptions[] = {
       {"private-key", required_argument, nullptr, 'p'},
-      {"server-certificate", required_argument, nullptr, 's'},
+      {"developer-certificate", required_argument, nullptr, 'd'},
+      {"generate-credentials", no_argument, nullptr, 'g'},
       {"friendly-name", required_argument, nullptr, 'f'},
       {"model-name", required_argument, nullptr, 'm'},
       {"tracing", no_argument, nullptr, 't'},
@@ -185,25 +207,29 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   bool is_verbose = false;
   bool discovery_enabled = true;
   std::string private_key_path;
-  std::string server_certificate_path;
+  std::string developer_certificate_path;
   std::string friendly_name = "Cast Standalone Receiver";
   std::string model_name = "cast_standalone_receiver";
+  bool should_generate_credentials = false;
   std::unique_ptr<openscreen::TextTraceLoggingPlatform> trace_logger;
   int ch = -1;
-  while ((ch = getopt_long(argc, argv, "p:s:f:m:tvhx", kArgumentOptions,
+  while ((ch = getopt_long(argc, argv, "p:d:f:m:gtvhx", kArgumentOptions,
                            nullptr)) != -1) {
     switch (ch) {
       case 'p':
         private_key_path = optarg;
         break;
-      case 's':
-        server_certificate_path = optarg;
+      case 'd':
+        developer_certificate_path = optarg;
         break;
       case 'f':
         friendly_name = optarg;
         break;
       case 'm':
-        friendly_name = optarg;
+        model_name = optarg;
+        break;
+      case 'g':
+        should_generate_credentials = true;
         break;
       case 't':
         trace_logger = std::make_unique<openscreen::TextTraceLoggingPlatform>();
@@ -219,13 +245,21 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
         return 1;
     }
   }
-  if (private_key_path.empty() != server_certificate_path.empty()) {
-    OSP_LOG_ERROR << "If a private key or server certificate path is provided, "
-                     "both are required.";
-    return 1;
-  }
+
   SetLogLevel(is_verbose ? openscreen::LogLevel::kVerbose
                          : openscreen::LogLevel::kInfo);
+
+  // Either -g is required, or both -p and -d.
+  if (should_generate_credentials) {
+    GenerateDeveloperCredentialsToFile();
+    return 0;
+  }
+  if (private_key_path.empty() || developer_certificate_path.empty()) {
+    OSP_LOG_FATAL << "You must either invoke with -g to generate credentials, "
+                     "or provide both a private key path and root certificate "
+                     "using -p and -d";
+    return 1;
+  }
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
   PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
@@ -241,13 +275,8 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
 
   std::string device_id =
       absl::StrCat("Standalone Receiver on ", interface_name);
-  ErrorOr<GeneratedCredentials> creds = Error::Code::kEVPInitializationError;
-  if (private_key_path.empty()) {
-    creds = GenerateCredentials(device_id);
-  } else {
-    creds = GenerateCredentials(device_id, private_key_path,
-                                server_certificate_path);
-  }
+  ErrorOr<GeneratedCredentials> creds = GenerateCredentials(
+      device_id, private_key_path, developer_certificate_path);
   OSP_CHECK(creds.is_value()) << creds.error();
   task_runner->PostTask(
       [&, interface = GetInterfaceInfoFromName(interface_name)] {

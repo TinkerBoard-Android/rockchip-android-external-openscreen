@@ -125,7 +125,7 @@ TEST_F(CastAgentIntegrationTest, CanConnect) {
   ASSERT_TRUE(loopback.has_value());
 
   ErrorOr<GeneratedCredentials> creds =
-      GenerateCredentials("Test Device Certificate");
+      GenerateCredentialsForTesting("Test Device Certificate");
   ASSERT_TRUE(creds.is_value());
   CastTrustStore::CreateInstanceForTest(creds.value().root_cert_der);
 
