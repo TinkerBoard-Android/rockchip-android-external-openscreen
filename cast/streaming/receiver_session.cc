@@ -216,20 +216,15 @@ ConfiguredReceivers ReceiverSession::SpawnReceivers(const AudioStream* audio,
   ResetReceivers(Client::kRenegotiated);
 
   AudioCaptureConfig audio_config;
-  absl::optional<ConfiguredReceiver<AudioStream>> deprecated_audio;
   if (audio) {
     current_audio_receiver_ = ConstructReceiver(audio->stream);
     audio_config = AudioCaptureConfig{
         StringToAudioCodec(audio->stream.codec_name), audio->stream.channels,
         audio->bit_rate, audio->stream.rtp_timebase,
         audio->stream.target_delay};
-    deprecated_audio.emplace(ConfiguredReceiver<AudioStream>{
-        current_audio_receiver_.get(), current_audio_receiver_->config(),
-        *audio});
   }
 
   VideoCaptureConfig video_config;
-  absl::optional<ConfiguredReceiver<VideoStream>> deprecated_video;
   if (video) {
     current_video_receiver_ = ConstructReceiver(video->stream);
     std::vector<DisplayResolution> display_resolutions;
@@ -242,18 +237,11 @@ ConfiguredReceivers ReceiverSession::SpawnReceivers(const AudioStream* audio,
                                      video->max_frame_rate.denominator},
                            video->max_bit_rate, std::move(display_resolutions),
                            video->stream.target_delay};
-    deprecated_video.emplace(ConfiguredReceiver<VideoStream>{
-        current_video_receiver_.get(), current_video_receiver_->config(),
-        *video});
   }
 
   return ConfiguredReceivers{
       current_audio_receiver_.get(), std::move(audio_config),
-      current_video_receiver_.get(), std::move(video_config),
-
-      // TODO(crbug.com/1132109): Remove deprecated ConfiguredReceiver fields
-      // after downstream migration
-      std::move(deprecated_audio), std::move(deprecated_video)};
+      current_video_receiver_.get(), std::move(video_config)};
 }
 
 void ReceiverSession::ResetReceivers(Client::ReceiversDestroyingReason reason) {

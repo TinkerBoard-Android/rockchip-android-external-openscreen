@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "cast/common/public/message_port.h"
 #include "cast/streaming/answer_messages.h"
 #include "cast/streaming/capture_configs.h"
@@ -28,16 +26,6 @@ class Receiver;
 
 class ReceiverSession final : public MessagePort::Client {
  public:
-  // DEPRECATED.
-  // TODO(crbug.com/1132097): Remove deprecated ConfiguredReceiver fields after
-  // downstream migration
-  template <typename T>
-  struct ConfiguredReceiver {
-    Receiver* receiver;
-    const SessionConfig receiver_config;
-    const T selected_stream;
-  };
-
   // Upon successful negotiation, a set of configured receivers is constructed
   // for handling audio and video. Note that either receiver may be null.
   struct ConfiguredReceivers {
@@ -58,12 +46,6 @@ class ReceiverSession final : public MessagePort::Client {
 
     Receiver* video_receiver;
     VideoCaptureConfig video_config;
-
-    // DEPRECATED
-    // TODO(crbug.com/1132097): Remove deprecated ConfiguredReceiver fields
-    // after downstream migration
-    absl::optional<ConfiguredReceiver<AudioStream>> audio;
-    absl::optional<ConfiguredReceiver<VideoStream>> video;
   };
 
   // The embedder should provide a client for handling connections.
