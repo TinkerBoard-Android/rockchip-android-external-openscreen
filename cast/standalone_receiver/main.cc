@@ -79,9 +79,13 @@ ErrorOr<std::unique_ptr<DiscoveryState>> StartDiscovery(
   ServiceInfo info;
   info.port = kDefaultCastPort;
 
-  OSP_CHECK(std::any_of(interface.hardware_address.begin(),
-                        interface.hardware_address.end(),
-                        [](int e) { return e > 0; }));
+  if (std::all_of(interface.hardware_address.begin(),
+                  interface.hardware_address.end(),
+                  [](int e) { return e == 0; })) {
+    OSP_LOG_WARN
+        << "Hardware address is empty. Either you are on a loopback device "
+           "or getting the network interface information failed somehow.";
+  }
   info.unique_id = HexEncode(interface.hardware_address);
   info.friendly_name = friendly_name;
   info.model_name = model_name;
