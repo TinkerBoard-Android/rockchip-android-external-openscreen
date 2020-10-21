@@ -95,66 +95,35 @@ ReceiverSession::ReceiverSession(Client* const client,
                                  Preferences preferences)
     : client_(client),
       environment_(environment),
-      message_port_(message_port),
       preferences_(std::move(preferences)),
+      messager_(message_port,
+                kDefaultStreamingReceiverSenderId,
+                [this](Error error) {
+                  OSP_DLOG_WARN << "Got a session messager error: " << error;
+                  client_->OnError(this, error);
+                }),
       packet_router_(environment_) {
   OSP_DCHECK(client_);
-  OSP_DCHECK(message_port_);
   OSP_DCHECK(environment_);
 
-  message_port_->SetClient(this, kDefaultStreamingReceiverSenderId);
+  messager_.SetHandler(kMessageTypeOffer,
+                       [this](SessionMessager::Message message) {
+                         OnOffer(std::move(message));
+                       });
 }
 
 ReceiverSession::~ReceiverSession() {
   ResetReceivers(Client::kEndOfSession);
-  message_port_->ResetClient();
 }
 
-void ReceiverSession::OnMessage(const std::string& sender_id,
-                                const std::string& message_namespace,
-                                const std::string& message) {
-  ErrorOr<Json::Value> message_json = json::Parse(message);
-
-  if (!message_json) {
-    client_->OnError(this, Error::Code::kJsonParseError);
-    OSP_DLOG_WARN << "Received an invalid message: " << message;
-    return;
-  }
-  OSP_DVLOG << "Received a message: " << message;
-
-  int sequence_number;
-  if (!json::ParseAndValidateInt(message_json.value()[kSequenceNumber],
-                                 &sequence_number)) {
-    OSP_DLOG_WARN << "Invalid message sequence number";
-    return;
-  }
-
-  std::string key;
-  if (!json::ParseAndValidateString(message_json.value()[kKeyType], &key)) {
-    OSP_DLOG_WARN << "Invalid message key";
-    return;
-  }
-
-  Message parsed_message{sender_id.data(), message_namespace.data(),
-                         sequence_number};
-  if (key == kMessageTypeOffer) {
-    parsed_message.body = std::move(message_json.value()[kOfferMessageBody]);
-    OnOffer(&parsed_message);
-  }
-}
-
-void ReceiverSession::OnError(Error error) {
-  OSP_DLOG_WARN << "ReceiverSession message port error: " << error;
-}
-
-void ReceiverSession::OnOffer(Message* message) {
-  ErrorOr<Offer> offer = Offer::Parse(std::move(message->body));
+void ReceiverSession::OnOffer(SessionMessager::Message message) {
+  ErrorOr<Offer> offer = Offer::Parse(std::move(message.body));
   if (!offer) {
     client_->OnError(this, offer.error());
     OSP_DLOG_WARN << "Could not parse offer" << offer.error();
-    message->body = CreateInvalidAnswerMessage(
+    message.body = CreateInvalidAnswerMessage(
         Error(Error::Code::kParseError, "Failed to parse malformed OFFER"));
-    SendMessage(message);
+    messager_.SendMessage(std::move(message));
     return;
   }
 
@@ -173,20 +142,20 @@ void ReceiverSession::OnOffer(Message* message) {
   }
 
   if (!selected_audio_stream && !selected_video_stream) {
-    message->body = CreateInvalidAnswerMessage(
+    message.body = CreateInvalidAnswerMessage(
         Error(Error::Code::kParseError, "No selected streams"));
     OSP_DLOG_WARN << "Failed to select any streams from OFFER";
-    SendMessage(message);
+    messager_.SendMessage(std::move(message));
     return;
   }
 
   const Answer answer =
-      ConstructAnswer(message, selected_audio_stream, selected_video_stream);
+      ConstructAnswer(&message, selected_audio_stream, selected_video_stream);
   if (!answer.IsValid()) {
-    message->body = CreateInvalidAnswerMessage(
+    message.body = CreateInvalidAnswerMessage(
         Error(Error::Code::kParseError, "Invalid answer message"));
     OSP_DLOG_WARN << "Failed to construct an ANSWER message";
-    SendMessage(message);
+    messager_.SendMessage(std::move(message));
     return;
   }
 
@@ -196,8 +165,8 @@ void ReceiverSession::OnOffer(Message* message) {
   // If the answer message is invalid, there is no point in setting up a
   // negotiation because the sender won't be able to connect to it.
   client_->OnNegotiated(this, std::move(receivers));
-  message->body = CreateAnswerMessage(answer);
-  SendMessage(message);
+  message.body = CreateAnswerMessage(answer);
+  messager_.SendMessage(std::move(message));
 }
 
 std::unique_ptr<Receiver> ReceiverSession::ConstructReceiver(
@@ -253,7 +222,7 @@ void ReceiverSession::ResetReceivers(Client::ReceiversDestroyingReason reason) {
 }
 
 Answer ReceiverSession::ConstructAnswer(
-    Message* message,
+    SessionMessager::Message* message,
     const AudioStream* selected_audio_stream,
     const VideoStream* selected_video_stream) {
   OSP_DCHECK(selected_audio_stream || selected_video_stream);
@@ -289,24 +258,6 @@ Answer ReceiverSession::ConstructAnswer(
                 std::vector<int>{},  // receiver_rtcp_event_log
                 std::vector<int>{},  // receiver_rtcp_dscp
                 supports_wifi_status_reporting_};
-}
-
-void ReceiverSession::SendMessage(Message* message) {
-  // All messages have the sequence number embedded.
-  message->body[kSequenceNumber] = message->sequence_number;
-
-  auto body_or_error = json::Stringify(message->body);
-  if (body_or_error.is_value()) {
-    OSP_DVLOG << "Sending message: SENDER[" << message->sender_id
-              << "], NAMESPACE[" << message->message_namespace << "], BODY:\n"
-              << body_or_error.value();
-    message_port_->PostMessage(message->sender_id, message->message_namespace,
-                               body_or_error.value());
-  } else {
-    OSP_DLOG_WARN << "Sending message failed with error:\n"
-                  << body_or_error.error();
-    client_->OnError(this, body_or_error.error());
-  }
 }
 
 }  // namespace cast

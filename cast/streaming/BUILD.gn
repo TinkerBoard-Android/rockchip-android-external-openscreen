@@ -42,6 +42,8 @@ source_set("common") {
     "rtp_time.h",
     "session_config.cc",
     "session_config.h",
+    "session_messager.cc",
+    "session_messager.h",
     "ssrc.cc",
     "ssrc.h",
   ]

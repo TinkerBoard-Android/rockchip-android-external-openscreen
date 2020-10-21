@@ -16,6 +16,7 @@
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/receiver_packet_router.h"
 #include "cast/streaming/session_config.h"
+#include "cast/streaming/session_messager.h"
 #include "util/json/json_serialization.h"
 
 namespace openscreen {
@@ -24,7 +25,7 @@ namespace cast {
 class Environment;
 class Receiver;
 
-class ReceiverSession final : public MessagePort::Client {
+class ReceiverSession final {
  public:
   // Upon successful negotiation, a set of configured receivers is constructed
   // for handling audio and video. Note that either receiver may be null.
@@ -111,22 +112,9 @@ class ReceiverSession final : public MessagePort::Client {
   ReceiverSession& operator=(ReceiverSession&&) = delete;
   ~ReceiverSession();
 
-  // MessagePort::Client overrides
-  void OnMessage(const std::string& sender_id,
-                 const std::string& message_namespace,
-                 const std::string& message) override;
-  void OnError(Error error) override;
-
  private:
-  struct Message {
-    const std::string sender_id = {};
-    const std::string message_namespace = {};
-    const int sequence_number = 0;
-    Json::Value body;
-  };
-
   // Specific message type handler methods.
-  void OnOffer(Message* message);
+  void OnOffer(SessionMessager::Message message);
 
   // Used by SpawnReceivers to generate a receiver for a specific stream.
   std::unique_ptr<Receiver> ConstructReceiver(const Stream& stream);
@@ -137,20 +125,17 @@ class ReceiverSession final : public MessagePort::Client {
                                      const VideoStream* video);
 
   // Callers of this method should ensure at least one stream is non-null.
-  Answer ConstructAnswer(Message* message,
+  Answer ConstructAnswer(SessionMessager::Message* message,
                          const AudioStream* audio,
                          const VideoStream* video);
-
-  // Sends a message over the message port.
-  void SendMessage(Message* message);
 
   // Handles resetting receivers and notifying the client.
   void ResetReceivers(Client::ReceiversDestroyingReason reason);
 
   Client* const client_;
   Environment* const environment_;
-  MessagePort* const message_port_;
   const Preferences preferences_;
+  SessionMessager messager_;
 
   bool supports_wifi_status_reporting_ = false;
   ReceiverPacketRouter packet_router_;
