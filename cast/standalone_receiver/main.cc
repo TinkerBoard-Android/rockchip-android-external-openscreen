@@ -116,16 +116,15 @@ std::unique_ptr<CastAgent> StartCastAgent(TaskRunnerImpl* task_runner,
 }
 
 void LogUsage(const char* argv0) {
-  std::cerr << R"(
-usage: )" << argv0
-            << R"( <options> <interface>
+  constexpr char kTemplate[] = R"(
+usage: %s <options> <interface>
 
-options:
     interface
         Specifies the network interface to bind to. The interface is
         looked up from the system interface registry.
         Mandatory, as it must be known for publishing discovery.
 
+options:
     -p, --private-key=path-to-key: Path to OpenSSL-generated private key to be
                     used for TLS authentication. If a private key is not
                     provided, a randomly generated one will be used for this
@@ -153,7 +152,9 @@ options:
     -v, --verbose: Enable verbose logging.
 
     -h, --help: Show this help message.
-  )";
+)";
+
+  std::cerr << StringPrintf(kTemplate, argv0);
 }
 
 InterfaceInfo GetInterfaceInfoFromName(const char* name) {

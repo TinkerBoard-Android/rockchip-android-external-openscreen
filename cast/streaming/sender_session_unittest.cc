@@ -17,6 +17,7 @@
 #include "platform/test/fake_clock.h"
 #include "platform/test/fake_task_runner.h"
 #include "util/chrono_helpers.h"
+#include "util/stringprintf.h"
 
 using ::testing::_;
 using ::testing::InSequence;
@@ -180,21 +181,18 @@ class SenderSessionTest : public ::testing::Test {
     const int video_index = video_stream["index"].asInt();
     const int video_ssrc = video_stream["ssrc"].asUInt();
 
-    constexpr size_t kAnswerSize = 512u;
-    char answer[kAnswerSize];
-    snprintf(answer, kAnswerSize, R"({ "type": "ANSWER",
-                           "seqNum": %d,
-                           "answer": {
-                             "castMode": "mirroring",
-                             "udpPort": 1234,
-                             "sendIndexes": [%d, %d],
-                             "ssrcs": [%d, %d]
-                           }
-                         })",
-             offer["seqNum"].asInt(), audio_index, video_index, audio_ssrc + 1,
-             video_ssrc + 1);
-
-    return std::string(answer);
+    constexpr char kAnswerTemplate[] = R"({
+        "type": "ANSWER",
+        "seqNum": %d,
+        "answer": {
+          "castMode": "mirroring",
+          "udpPort": 1234,
+          "sendIndexes": [%d, %d],
+          "ssrcs": [%d, %d]
+        }
+        })";
+    return StringPrintf(kAnswerTemplate, offer["seqNum"].asInt(), audio_index,
+                        video_index, audio_ssrc + 1, video_ssrc + 1);
   }
 
  protected:

@@ -42,24 +42,20 @@ IPEndpoint GetDefaultEndpoint() {
 }
 
 void LogUsage(const char* argv0) {
-  std::cerr << R"(
-    usage:)" << argv0
-            << R"( <options> <media_file>
+  constexpr char kTemplate[] = R"(
+usage: %s <options> <media_file>
 
       -r, --remote=addr[:port]
            Specify the destination (e.g., 192.168.1.22:9999 or [::1]:12345).
 
-           Default if not set: )"
-            << GetDefaultEndpoint() << R"(
+           Default if not set: %s
 
       -m, --max-bitrate=N
            Specifies the maximum bits per second for the media streams.
 
-           Default if not set: )"
-            << kDefaultMaxBitrate << "\n"
-
+           Default if not set: %d)"
 #if defined(CAST_ALLOW_DEVELOPER_CERTIFICATE)
-            << R"(
+                               R"(
       -d, --developer-certificate=path-to-cert
            Specifies the path to a self-signed developer certificate that will
            be permitted for use as a root CA certificate for receivers that
@@ -68,7 +64,7 @@ void LogUsage(const char* argv0) {
            Google-signed cast certificate chain will be permitted.
 )"
 #endif
-            << R"(
+                               R"(
       -a, --android-hack:
            Use the wrong RTP payload types, for compatibility with older Android
            TV receivers.
@@ -78,7 +74,11 @@ void LogUsage(const char* argv0) {
       -v, --verbose: Enable verbose logging.
 
       -h, --help: Show this help message.
-  )";
+)";
+
+  std::cerr << StringPrintf(kTemplate, argv0,
+                            GetDefaultEndpoint().ToString().c_str(),
+                            kDefaultMaxBitrate);
 }
 
 int StandaloneSenderMain(int argc, char* argv[]) {
