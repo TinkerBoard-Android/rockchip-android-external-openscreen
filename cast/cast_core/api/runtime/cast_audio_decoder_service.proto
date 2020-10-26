@@ -1,10 +1,18 @@
 syntax = "proto3";
 
-package cast.media.core;
+package cast.media;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option optimize_for = LITE_RUNTIME;
+
+enum PipelineState {
+  PIPELINE_STATE_UNINITIALIZED = 0;
+  PIPELINE_STATE_STOPPED = 1;
+  PIPELINE_STATE_PLAYING = 2;
+  PIPELINE_STATE_PAUSED = 3;
+}
 
 message AudioConfiguration {
   enum AudioCodec {
@@ -53,7 +61,7 @@ message AudioConfiguration {
     SAMPLE_FORMAT_PLANAR_F32 = 6;  // Float 32-bit planar.
     SAMPLE_FORMAT_PLANAR_S32 = 7;  // Signed 32-bit planar.
     SAMPLE_FORMAT_S24 = 8;         // Signed 24-bit.
-  };
+  }
 
   // Audio codec.
   AudioCodec codec = 1;
@@ -92,64 +100,50 @@ message AudioDecoderBuffer {
   bool end_of_stream = 3;
 }
 
-// Represents the Presentation Timestamp (PTS) metadata associated with an audio
-// stream.
+// Info on pipeline latency.
 message RenderingDelay {
   // The amount of data in pipeline (in microseconds) that has not been rendered
   // yet.
-  int64 delay_microseconds = 1;
+  int64 delay_micros = 1;
 
-  // Timestamp (in microseconds) with respect to the system clock (must be
+  // Capture time (in microseconds) with respect to the system clock (must be
   // CLOCK_MONOTONIC_RAW) at which the delay measurement was taken.
-  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Timestamp capture_time = 2;
 }
 
-message PushBufferResponse {
-  enum ResponseType {
-    RESPONSE_TYPE_UNKNOWN = 0;
-    // A call to PushBuffer has failed.
-    RESPONSE_TYPE_NONFATAL_ERROR = 1;
-    // A non-recoverable error has occurred, and the server should be assumed to
-    // be in an unhealthy state.
-    RESPONSE_TYPE_FATAL_ERROR = 2;
-    // The end-of-stream buffer has been rendered.
-    RESPONSE_TYPE_END_OF_STREAM = 3;
-    // Called when the PTS Offset has been updated.
-    RESPONSE_TYPE_PTS_UPDATED = 4;
+message MediaTime {
+  // The currents PTS that has been rendered.
+  int64 pts_micros = 1;
+
+  // Capture time (in microseconds) with respect to the system clock (must be
+  // CLOCK_MONOTONIC_RAW) at which the delay measurement was taken.
+  google.protobuf.Timestamp capture_time = 2;
+}
+
+message InitializeRequest {
+  enum Mode {
+    // Both multiroom and audio rendering is enabled.
+    MODE_ALL = 0;
+
+    // Only multiroom is enabled and audio rendering is disabled.  This should
+    // be used if the runtime is taking over responsibility for rendering audio.
+    MODE_MULTIROOM_ONLY = 1;
+
+    // Only audio rendering is enabled and multiroom is disabled.
+    MODE_AUDIO_ONLY = 2;
   }
 
-  // The result of a call to PushBuffer() which was not merely a success.
-  ResponseType push_buffer_response = 1;
+  // Cast session ID.
+  string cast_session_id = 1;
 
-  // The current PTS Offset. In the case of a PTS_UPDATED call, this value is
-  // used to set the new PTS Offset value. In all other cases, this field may
-  // not be populated.
-  RenderingDelay pts_offset = 2;
+  // Configures how the server should operate.
+  Mode mode = 2;
 }
 
-message SetConfigRequest {
-  AudioConfiguration configuration = 1;
+message StartRequest {
+  // The start playback timestamp in microseconds.
+  int64 pts_micros = 1;
 }
-
-message SetVolumeRequest {
-  // The multiplier is in the range [0.0, 1.0].
-  float multiplier = 1;
-}
-
-message GetRenderingDelayRequest {}
-message GetRenderingDelayResponse {
-  // The current PTS offset if operation is successful.
-  RenderingDelay pts_offset = 1;
-}
-
-message GetDecodedBytesRequest {}
-message GetDecodedBytesResponse {
-  // The total number of bytes recorded since the state machine has entered the
-  // 'Playing' state.
-  uint64 total_bytes = 1;
-}
-
-message StartRequest {}
 
 message StopRequest {}
 
@@ -157,103 +151,123 @@ message PauseRequest {}
 
 message ResumeRequest {}
 
-message StatusChangeRequest {
+message StateChangeRequest {
   oneof request {
-    GetDecodedBytesRequest get_decoded_bytes = 1;
-    GetRenderingDelayResponse get_rendering_delay = 2;
-    SetConfigRequest set_config_request = 3;
-    SetVolumeRequest set_volume_request = 4;
-    AudioDecoderBuffer push_buffer_request = 5;
-    StartRequest start_request = 6;
-    StopRequest stop_request = 7;
-    PauseRequest pause_request = 8;
-    ResumeRequest resume_request = 9;
+    StartRequest start = 1;
+    StopRequest stop = 2;
+    PauseRequest pause = 3;
+    ResumeRequest resume = 4;
   }
 }
 
-message StatusChangeResponse {
-  oneof response {
-    GetDecodedBytesResponse get_decoded_byes = 1;
-    GetRenderingDelayResponse get_rendering_delay = 2;
-    PushBufferResponse push_buffer_response = 3;
-  }
+message StateChangeResponse {
+  // Pipeline state after state change.
+  PipelineState state = 1;
 }
 
-// This service is implemented by Chromecast devices that use an out-of-process
-// audio decoder. It defines a state machine with the following states:
+message PushBufferRequest {
+  AudioDecoderBuffer buffer = 1;
+
+  // Audio configuration for this buffer and all subsequent buffers.  This
+  // field must be populated for the first request or if there is an audio
+  // configuration change.
+  optional AudioConfiguration audio_config = 2;
+}
+
+message PushBufferResponse {
+  // The total number of  decoded bytes.
+  int64 decoded_bytes = 1;
+}
+
+message SetVolumeRequest {
+  // The multiplier is in the range [0.0, 1.0].
+  float multiplier = 1;
+}
+message SetVolumeResponse {
+  // Returns true if the last SetVolumeRequest succeeded.
+  bool success = 1;
+}
+
+message SetPlaybackRateRequest {
+  // Playback rate greater than 0.
+  double rate = 1;
+}
+message SetPlaybackRateResponse {
+  // Returns true if the last SetPlaybackRateResponse succeeded.
+  double success = 1;
+}
+
+message GetMediaTimeResponse {
+  // The current media time that has been rendered.
+  MediaTime media_time = 1;
+}
+
+// Cast audio service hosted by Cast Core.
+//
+// It defines a state machine with the following states:
+// - Uninitialized
 // - Playing
 // - Stopped
 // - Paused
 //
-// It is used to handle control of the media stream, and initially starts in the
-// 'Stopped' state.
+// Note tthat the received ordering between different RPC calls is not
+// guaranteed to match the sent order.
 service CastAudioDecoder {
-  // Sends one of the following commands:
+  // Initializes the service and places the pipeline into the 'Stopped' state.
+  // This must be the first call received by the server, and no other calls
+  // may be sent prior to receiving this call's response.
+  rpc Initialize(InitializeRequest) returns (google.protobuf.Empty);
+
+  // Update the pipeline state.
   //
-  // GetDecodedBytes:
-  //   Returns the number of decoded bytes since the start of this connection's
-  //   lifetime.
-  //
-  //   May only be called in the 'Playing' state, and following this call the
-  //   state machine will be in the 'Playing' state.
-  //
-  // GetRenderingDelay:
-  //   Returns the pipeline latency: i.e. the amount of data in the pipeline
-  //   that has not been rendered yet.
-  //
-  //   May only be called in the 'Playing' state, and following this call the
-  //   state machine will be in the 'Playing' state.
-  //
-  // SetConfig:
-  //   Provides the audio configuration either at initial setup or at any time
-  //   it changes. This config will then be applied to all future frames passed
-  //   through PushBuffer.
-  //
-  //   May be called in any state, and following this call the state machine
-  //   will remain in the same state.
-  //
-  // SetVolume:
-  //   Sets the volume multiplier for this audio stream.
-  //   The multiplier is in the range [0.0, 1.0].  If not called, a default
-  //   multiplier of 1.0 is assumed. Returns true if successful.
-  //
-  //   May be called in any state, and following this call the state machine
-  //   will be in the same state.
-  //
-  // PushBuffer:
-  //   This API provides a 2 way stream for decoded bits and responses to those
-  //   bits. AudioDecodeBuffer packets are sent to the server, and responses are
-  //   sent back in the case of either a non-successful push or an edge case
-  //   such as end of input.
-  //
-  //   May only be called in the 'Playing' or 'Paused' states, and following
-  //   this call the state machine will remain the same state.
-  //
-  // Start:
+  // StartRequest:
   //   Places pipeline into 'Playing' state. Playback will start at given time
   //   once buffers are pushed.
   //
   //   May only be called in the 'Stopped' state, and following this call the
   //   state machine will be in the 'Playing' state.
   //
-  // Stop:
+  // StopRequest
   //   Stops media playback and drops all pushed buffers which have not yet been
   //   played.
   //
   //   May only be called in the 'Playing' or 'Paused' states, and following
   //   this call the state machine will be in the 'Stopped' state.
   //
-  // Pause:
+  // PauseRequest
   //   Pauses media playback
   //
   //   May only be called in the 'Playing' state, and following this call the
   //   state machine will be in the 'Paused' state.
   //
-  // Resume:
+  // ResumeRequest
   //   Resumes media playback
   //
   //   May only be called in the 'Paused' state, and following this call the
   //   state machine will be in the 'Playing'' state.
-  rpc SendStatusChange(stream StatusChangeRequest)
-      returns (stream StatusChangeResponse);
+  rpc StateChange(StateChangeRequest) returns (StateChangeResponse);
+
+  // Sets the volume multiplier for this audio stream.
+  // The multiplier is in the range [0.0, 1.0].  If not called, a default
+  // multiplier of 1.0 is assumed. A SetVolumeResponse message will be
+  // be generated.
+  //
+  // May be called in any state, and following this call the state machine
+  // will be in the same state.
+  rpc SetVolume(SetVolumeRequest) returns (SetVolumeResponse);
+
+  // Sets the playback rate for this audio stream.
+  //
+  // May be called in any state, and following this call the state machine
+  // will be in the same state.
+  rpc SetPlayback(SetPlaybackRateRequest) returns (SetPlaybackRateResponse);
+
+  // Streams decoded bits and responses to the audio service.
+  //
+  // May only be called in the 'Playing' or 'Paused' states, and following
+  // this call the state machine will remain the same state.
+  rpc PushBuffer(stream PushBufferRequest) returns (PushBufferResponse);
+
+  // Returns the current media time that has been rendered.
+  rpc GetMediaTime(google.protobuf.Empty) returns (GetMediaTimeResponse);
 }
