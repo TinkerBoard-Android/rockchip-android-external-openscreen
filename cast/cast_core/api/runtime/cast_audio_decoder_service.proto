@@ -14,6 +14,18 @@ enum PipelineState {
   PIPELINE_STATE_PAUSED = 3;
 }
 
+enum CastAudioDecoderMode {
+  // Both multiroom and audio rendering is enabled.
+  CAST_AUDIO_DECODER_MODE_ALL = 0;
+
+  // Only multiroom is enabled and audio rendering is disabled.  This should
+  // be used if the runtime is taking over responsibility for rendering audio.
+  CAST_AUDIO_DECODER_MODE_MULTIROOM_ONLY = 1;
+
+  // Only audio rendering is enabled and multiroom is disabled.
+  CAST_AUDIO_DECODER_MODE_AUDIO_ONLY = 2;
+}
+
 message AudioConfiguration {
   enum AudioCodec {
     AUDIO_CODEC_UNKNOWN = 0;
@@ -113,31 +125,22 @@ message RenderingDelay {
 
 message MediaTime {
   // The currents PTS that has been rendered.
-  int64 pts_micros = 1;
+  int64 current_pts_micros = 1;
+
+  // The end of stream has been rendered.
+  bool end_of_stream = 2;
 
   // Capture time (in microseconds) with respect to the system clock (must be
   // CLOCK_MONOTONIC_RAW) at which the delay measurement was taken.
-  google.protobuf.Timestamp capture_time = 2;
+  google.protobuf.Timestamp capture_time = 3;
 }
 
 message InitializeRequest {
-  enum Mode {
-    // Both multiroom and audio rendering is enabled.
-    MODE_ALL = 0;
-
-    // Only multiroom is enabled and audio rendering is disabled.  This should
-    // be used if the runtime is taking over responsibility for rendering audio.
-    MODE_MULTIROOM_ONLY = 1;
-
-    // Only audio rendering is enabled and multiroom is disabled.
-    MODE_AUDIO_ONLY = 2;
-  }
-
   // Cast session ID.
   string cast_session_id = 1;
 
   // Configures how the server should operate.
-  Mode mode = 2;
+  CastAudioDecoderMode mode = 2;
 }
 
 message StartRequest {
@@ -183,18 +186,9 @@ message SetVolumeRequest {
   // The multiplier is in the range [0.0, 1.0].
   float multiplier = 1;
 }
-message SetVolumeResponse {
-  // Returns true if the last SetVolumeRequest succeeded.
-  bool success = 1;
-}
-
 message SetPlaybackRateRequest {
   // Playback rate greater than 0.
   double rate = 1;
-}
-message SetPlaybackRateResponse {
-  // Returns true if the last SetPlaybackRateResponse succeeded.
-  double success = 1;
 }
 
 message GetMediaTimeResponse {
@@ -210,7 +204,7 @@ message GetMediaTimeResponse {
 // - Stopped
 // - Paused
 //
-// Note tthat the received ordering between different RPC calls is not
+// Note that the received ordering between different RPC calls is not
 // guaranteed to match the sent order.
 service CastAudioDecoder {
   // Initializes the service and places the pipeline into the 'Stopped' state.
@@ -249,18 +243,17 @@ service CastAudioDecoder {
 
   // Sets the volume multiplier for this audio stream.
   // The multiplier is in the range [0.0, 1.0].  If not called, a default
-  // multiplier of 1.0 is assumed. A SetVolumeResponse message will be
-  // be generated.
+  // multiplier of 1.0 is assumed.
   //
   // May be called in any state, and following this call the state machine
   // will be in the same state.
-  rpc SetVolume(SetVolumeRequest) returns (SetVolumeResponse);
+  rpc SetVolume(SetVolumeRequest) returns (google.protobuf.Empty);
 
   // Sets the playback rate for this audio stream.
   //
   // May be called in any state, and following this call the state machine
   // will be in the same state.
-  rpc SetPlayback(SetPlaybackRateRequest) returns (SetPlaybackRateResponse);
+  rpc SetPlayback(SetPlaybackRateRequest) returns (google.protobuf.Empty);
 
   // Streams decoded bits and responses to the audio service.
   //
