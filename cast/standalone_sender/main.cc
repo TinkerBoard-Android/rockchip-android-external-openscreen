@@ -32,6 +32,7 @@
 #include "platform/impl/text_trace_logging_platform.h"
 #include "util/alarm.h"
 #include "util/chrono_helpers.h"
+#include "util/stringprintf.h"
 
 namespace openscreen {
 namespace cast {
@@ -53,15 +54,16 @@ usage: %s <options> <media_file>
       -m, --max-bitrate=N
            Specifies the maximum bits per second for the media streams.
 
-           Default if not set: %d)"
+           Default if not set: %d
+)"
 #if defined(CAST_ALLOW_DEVELOPER_CERTIFICATE)
                                R"(
       -d, --developer-certificate=path-to-cert
            Specifies the path to a self-signed developer certificate that will
            be permitted for use as a root CA certificate for receivers that
-           this sender instance will connect to.
-           If omitted, only connections to receivers using an official
-           Google-signed cast certificate chain will be permitted.
+           this sender instance will connect to. If omitted, only connections to
+           receivers using an official Google-signed cast certificate chain will
+           be permitted.
 )"
 #endif
                                R"(
