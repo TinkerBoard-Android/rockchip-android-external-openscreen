@@ -108,6 +108,7 @@ if (!build_with_chromium) {
       ":public",
       "../../discovery:dnssd",
       "../../discovery:public",
+      "../../testing/util",
       "../../third_party/googletest:gtest",
     ]
   }

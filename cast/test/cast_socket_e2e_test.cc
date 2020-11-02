@@ -29,6 +29,7 @@
 #include "platform/impl/logging.h"
 #include "platform/impl/network_interface.h"
 #include "platform/impl/platform_client_posix.h"
+#include "testing/util/task_util.h"
 #include "util/crypto/certificate_utils.h"
 #include "util/osp_logging.h"
 
@@ -202,23 +203,6 @@ class CastSocketE2ETest : public ::testing::Test {
     OSP_CHECK(loopback);
     IPAddress address = loopback->GetIpAddressV6();
     return address;
-  }
-
-  // TODO(btolsch): Pull this into a helper file for use by other tests.
-  template <typename Cond>
-  void WaitForCondition(Cond condition,
-                        Clock::duration delay = std::chrono::milliseconds(250),
-                        int max_attempts = 8) {
-    int attempts = 1;
-    do {
-      OSP_LOG_INFO << kLogDecorator << "Checking condition, attempt "
-                   << attempts << "/" << max_attempts;
-      if (condition()) {
-        break;
-      }
-      std::this_thread::sleep_for(delay);
-    } while (attempts++ < max_attempts);
-    ASSERT_TRUE(condition());
   }
 
   void Connect(const IPAddress& address) {
