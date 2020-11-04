@@ -239,6 +239,9 @@ service CastAudioDecoder {
   //
   //   May only be called in the 'Paused' state, and following this call the
   //   state machine will be in the 'Playing'' state.
+  //
+  // A state transition may only occur after a successful PushBuffer()
+  // call has been made with a valid configuration.
   rpc StateChange(StateChangeRequest) returns (StateChangeResponse);
 
   // Sets the volume multiplier for this audio stream.
