@@ -67,14 +67,13 @@ class TestCredentialsProvider final
   StaticCredentialsProvider creds_;
 };
 
-class TestAuthChallengeMessage : public CastMessage {
- public:
-  TestAuthChallengeMessage() {
-    const auto result = ParseFromString(
-        ReadEntireFileToString(GetTestDataSubdir() + "/auth_challenge.pb"));
-    OSP_CHECK(result);
-  }
-};
+CastMessage TestAuthChallengeMessage() {
+  CastMessage message;
+  const auto result = message.ParseFromString(
+      ReadEntireFileToString(GetTestDataSubdir() + "/auth_challenge.pb"));
+  OSP_CHECK(result);
+  return message;
+}
 
 class FakeApplication : public ApplicationAgent::Application,
                         public MessagePort::Client {
