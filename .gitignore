@@ -7,3 +7,4 @@ tools/clang/scripts/update.py
 *.profraw
 *.profdata
 generated_root_cast_receiver*
+yajsv
