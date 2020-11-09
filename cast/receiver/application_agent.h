@@ -14,6 +14,7 @@
 #include "cast/common/channel/connection_namespace_handler.h"
 #include "cast/common/channel/virtual_connection_manager.h"
 #include "cast/common/channel/virtual_connection_router.h"
+#include "cast/common/public/cast_socket.h"
 #include "cast/receiver/channel/device_auth_namespace_handler.h"
 #include "cast/receiver/public/receiver_socket_factory.h"
 #include "platform/api/serial_delete_ptr.h"
@@ -87,6 +88,10 @@ class ApplicationAgent final
 
   ~ApplicationAgent() final;
 
+  // Return the interface by which the CastSocket inbound traffic is delivered
+  // into this agent and any running Applications.
+  CastSocket::Client* cast_socket_client() { return &router_; }
+
   // Registers an Application for launching by this agent. |app| must outlive
   // this ApplicationAgent, or until UnregisterApplication() is called.
   void RegisterApplication(Application* app,
@@ -151,8 +156,8 @@ class ApplicationAgent final
 
   TaskRunner* const task_runner_;
   DeviceAuthNamespaceHandler auth_handler_;
-  ConnectionNamespaceHandler connection_handler_;
   VirtualConnectionManager connection_manager_;
+  ConnectionNamespaceHandler connection_handler_;
   VirtualConnectionRouter router_;
 
   std::map<std::string, Application*> registered_applications_;

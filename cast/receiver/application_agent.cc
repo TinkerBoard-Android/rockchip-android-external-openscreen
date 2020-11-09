@@ -358,6 +358,11 @@ void ApplicationAgent::PopulateReceiverStatus(Json::Value* out) {
 
   if (launched_app_) {
     Json::Value& details = status[kMessageKeyApplications][0];
+    // If the Application can send/receive messages, the destination for such
+    // messages is provided here, in |transportId|. However, the other end must
+    // first set up the virtual connection by issuing a CONNECT request.
+    // Otherwise, messages will not get routed to the Application by the
+    // VirtualConnectionRouter.
     if (!message_port_.client_sender_id().empty()) {
       details[kMessageKeyTransportId] = message_port_.client_sender_id();
     }

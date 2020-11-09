@@ -78,7 +78,7 @@ CastMessage TestAuthChallengeMessage() {
 class FakeApplication : public ApplicationAgent::Application,
                         public MessagePort::Client {
  public:
-  explicit FakeApplication(const char* app_id, const char* display_name)
+  FakeApplication(const char* app_id, const char* display_name)
       : app_ids_({app_id}), display_name_(display_name) {
     OSP_CHECK(app_ids_.front().size() == 8);
   }

@@ -198,8 +198,9 @@ Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
   // Currently we don't have a way to discover the ID of the receiver we
   // are connected to, since we have to send the first message.
   // TODO(jophba): migrate to discovered receiver ID when available.
+  static constexpr char kPlaceholderReceiverSenderId[] = "receiver-12345";
   messager_.SendMessage(SessionMessager::Message{
-      kDefaultStreamingReceiverSenderId, kCastWebrtcNamespace,
+      kPlaceholderReceiverSenderId, kCastWebrtcNamespace,
       ++current_sequence_number_, std::move(message_body)});
   return Error::None();
 }

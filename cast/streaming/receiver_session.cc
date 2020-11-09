@@ -11,6 +11,7 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
+#include "cast/common/channel/message_util.h"
 #include "cast/common/public/message_port.h"
 #include "cast/streaming/environment.h"
 #include "cast/streaming/message_fields.h"
@@ -96,8 +97,9 @@ ReceiverSession::ReceiverSession(Client* const client,
     : client_(client),
       environment_(environment),
       preferences_(std::move(preferences)),
+      session_id_(MakeUniqueSessionId("streaming_receiver")),
       messager_(message_port,
-                kDefaultStreamingReceiverSenderId,
+                session_id_,
                 [this](Error error) {
                   OSP_DLOG_WARN << "Got a session messager error: " << error;
                   client_->OnError(this, error);

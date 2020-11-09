@@ -112,6 +112,8 @@ class ReceiverSession final {
   ReceiverSession& operator=(ReceiverSession&&) = delete;
   ~ReceiverSession();
 
+  const std::string& session_id() const { return session_id_; }
+
  private:
   // Specific message type handler methods.
   void OnOffer(SessionMessager::Message message);
@@ -135,6 +137,7 @@ class ReceiverSession final {
   Client* const client_;
   Environment* const environment_;
   const Preferences preferences_;
+  const std::string session_id_;
   SessionMessager messager_;
 
   bool supports_wifi_status_reporting_ = false;
