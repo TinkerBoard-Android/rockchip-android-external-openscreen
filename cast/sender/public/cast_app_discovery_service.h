@@ -24,7 +24,7 @@ class CastAppDiscoveryService {
   class Subscription {
    public:
     Subscription(CastAppDiscoveryService* discovery_service, uint32_t id);
-    Subscription(Subscription&&);
+    Subscription(Subscription&&) noexcept;
     Subscription(Subscription&) = delete;
     Subscription& operator=(Subscription&&);
     Subscription& operator=(const Subscription&) = delete;

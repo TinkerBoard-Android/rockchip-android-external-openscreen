@@ -26,7 +26,7 @@ class StaticCredentialsProvider final
                             std::vector<uint8_t> tls_cert_der);
 
   StaticCredentialsProvider(const StaticCredentialsProvider&) = delete;
-  StaticCredentialsProvider(StaticCredentialsProvider&&);
+  StaticCredentialsProvider(StaticCredentialsProvider&&) noexcept;
   StaticCredentialsProvider& operator=(const StaticCredentialsProvider&) =
       delete;
   StaticCredentialsProvider& operator=(StaticCredentialsProvider&&);
