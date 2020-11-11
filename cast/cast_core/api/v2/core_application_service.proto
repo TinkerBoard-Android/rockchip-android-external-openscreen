@@ -32,7 +32,7 @@ service CoreApplicationService {
   // "MessageConnectorService" provides the transport for MessagePorts.
   // MessagePorts are connected using other services (e.g. ApiBindings), then
   // registered with the MessageConnectorService to communicate over IPC
-  rpc PostMessage(cast.web.Message) returns (cast.web.ChannelStatus);
+  rpc PostMessage(cast.web.Message) returns (cast.web.MessagePortStatus);
 
   // "ApiBindings", used for retrieving and initializing Cast bindings
   // Gets the list of bindings to early-inject into the page at load time.
