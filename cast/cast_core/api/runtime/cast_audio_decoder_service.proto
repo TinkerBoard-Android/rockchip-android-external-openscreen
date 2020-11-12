@@ -171,10 +171,10 @@ message StateChangeResponse {
 message PushBufferRequest {
   AudioDecoderBuffer buffer = 1;
 
-  // Audio configuration for this buffer and all subsequent buffers.  This
+  // Audio configuration for this buffer and all subsequent buffers. This
   // field must be populated for the first request or if there is an audio
   // configuration change.
-  optional AudioConfiguration audio_config = 2;
+  AudioConfiguration audio_config = 2;
 }
 
 message PushBufferResponse {
