@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package cast.web;
 
-import "google/protobuf/empty.proto";
-
 option optimize_for = LITE_RUNTIME;
 
 message Message {
