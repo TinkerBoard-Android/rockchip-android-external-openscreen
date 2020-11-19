@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import re
+
 # Rather than pass this to all of the checks, we override the global excluded
 # list with this one.
 _EXCLUDED_PATHS = (
@@ -41,6 +43,62 @@ def _CheckDeps(input_api, output_api):
   return results
 
 
+# Matches Foo(Foo&&) when not followed by noexcept.
+_RE_PATTERN_MOVE_WITHOUT_NOEXCEPT = re.compile(
+    r'\s*(?P<classname>\w+)\((?P=classname)&&[^)]*\)\s*(?!noexcept)\s*[{;=]')
+
+
+def _CheckNoexceptOnMove(filename, clean_lines, linenum, error):
+  """Checks that move constructors are declared with 'noexcept'.
+
+  Args:
+    filename: The name of the current file.
+    clean_lines: A CleansedLines instance containing the file.
+    linenum: The number of the line to check.
+    error: The function to call with any errors found.
+  """
+  # We only check headers as noexcept is meaningful on declarations, not
+  # definitions.  This may skip some definitions in .cc files though.
+  if not filename.endswith('.h'):
+    return
+
+  line = clean_lines.elided[linenum]
+  matched = _RE_PATTERN_MOVE_WITHOUT_NOEXCEPT.match(line)
+  if matched:
+    error(filename, linenum, 'runtime/noexcept', 4,
+          'Move constructor of %s not declared \'noexcept\' in %s' %
+          (matched.group('classname'), matched.group(0).strip()))
+
+# - We disable c++11 header checks since Open Screen allows them.
+# - We disable whitespace/braces because of various false positives.
+# - There are some false positives with 'explicit' checks, but it's useful
+#   enough to keep.
+# - We add a custom check for 'noexcept' usage.
+def _CheckChangeLintsClean(input_api, output_api):
+  """Checks that all '.cc' and '.h' files pass cpplint.py."""
+  result = []
+
+  cpplint = input_api.cpplint
+  # Access to a protected member _XX of a client class
+  # pylint: disable=protected-access
+  cpplint._cpplint_state.ResetErrorCounts()
+
+  cpplint._SetFilters('-build/c++11,-whitespace/braces')
+  files = [f.AbsoluteLocalPath() for f in input_api.AffectedSourceFiles(None)]
+  for file_name in files:
+    # 4 = verbose_level
+    cpplint.ProcessFile(file_name, 4, [_CheckNoexceptOnMove])
+
+  if cpplint._cpplint_state.error_count > 0:
+    if input_api.is_committing:
+      res_type = output_api.PresubmitError
+    else:
+      res_type = output_api.PresubmitPromptWarning
+    result = [res_type('Changelist failed cpplint.py check.')]
+
+  return result
+
+
 def _CommonChecks(input_api, output_api):
   results = []
   # PanProjectChecks include:
@@ -68,14 +126,7 @@ def _CommonChecks(input_api, output_api):
     input_api, output_api))
 
   # Linter.
-  # - We disable c++11 header checks since Open Screen allows them.
-  # - We disable whitespace/braces because of various false positives.
-  # - There are some false positives with 'explicit' checks, but it's useful
-  #   enough to keep.
-  results.extend(input_api.canned_checks.CheckChangeLintsClean(
-    input_api, output_api,
-    lint_filters = ['-build/c++11', '-whitespace/braces'],
-    verbose_level=4))
+  results.extend(_CheckChangeLintsClean(input_api, output_api))
 
   # clang-format
   results.extend(input_api.canned_checks.CheckPatchFormatted(
