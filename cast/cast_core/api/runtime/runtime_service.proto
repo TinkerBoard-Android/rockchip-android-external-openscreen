@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package cast.runtime;
 
+import "google/protobuf/duration.proto";
 import "cast/cast_core/api/common/service_info.proto";
 
 option optimize_for = LITE_RUNTIME;
@@ -20,6 +21,11 @@ service RuntimeService {
   // If both app_id and cast_session_id are omitted, the current, "foreground"
   // application is stopped.
   rpc StopApplication(StopApplicationRequest) returns (StopApplicationResponse);
+
+  // Requests runtime to send a heartbeat in a stream. The use of server-side
+  // streaming allows Core to know for sure that runtime is still running. In
+  // case of a crash, the gRPC stream will error with UNAVAILABLE error.
+  rpc Heartbeat(HeartbeatRequest) returns (stream HeartbeatResponse);
 }
 
 message LaunchApplicationRequest {
@@ -46,3 +52,11 @@ message StopApplicationResponse {
   // If stop application was successful, the Cast session ID that was stopped.
   string cast_session_id = 2;
 }
+
+message HeartbeatRequest {
+  // Period between two heartbeat responses. The Core will wait for double of
+  // this time to avoid network glitches. The minimum value is 5 seconds.
+  google.protobuf.Duration heartbeat_period = 1;
+}
+
+message HeartbeatResponse {}
