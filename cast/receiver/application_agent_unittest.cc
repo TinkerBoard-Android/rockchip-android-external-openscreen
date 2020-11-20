@@ -435,8 +435,8 @@ TEST_F(ApplicationAgentTest, LaunchesApp_PassesMessages_ThenStopsApp) {
 
   // Phase 1: Sender sends a LAUNCH request, which causes the idle app to stop
   // and the receiver app to launch. The receiver (ApplicationAgent) broadcasts
-  // a RECEIVER_STATUS to indicate the app is running; and both the receiver app
-  // and the sender will get a copy of it.
+  // a RECEIVER_STATUS to indicate the app is running; but the receiver app
+  // should not get a copy of that.
   Sequence phase1;
   MessagePort* port_for_app = nullptr;
   EXPECT_CALL(*idle_app(), DidStop()).InSequence(phase1);
@@ -473,20 +473,6 @@ TEST_F(ApplicationAgentTest, LaunchesApp_PassesMessages_ThenStopsApp) {
         }
       }
   })";
-  EXPECT_CALL(some_app, OnMessage(_, _, _))
-      .InSequence(phase1)
-      .WillOnce(Invoke([&](const std::string& source_id,
-                           const std::string& the_namespace,
-                           const std::string& message) {
-        EXPECT_EQ(kPlatformReceiverId, source_id);
-        EXPECT_EQ(kReceiverNamespace, the_namespace);
-        const auto parsed = json::Parse(message);
-        EXPECT_TRUE(parsed.is_value()) << parsed.error();
-        if (parsed.is_value()) {
-          EXPECT_EQ(json::Parse(kRunningAppReceiverStatus).value(),
-                    parsed.value());
-        }
-      }));
   EXPECT_CALL(*sender_inbound(), OnMessage(_, _))
       .InSequence(phase1)
       .WillOnce(Invoke([&](CastSocket*, CastMessage message) {

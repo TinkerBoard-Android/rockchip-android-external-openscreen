@@ -89,6 +89,13 @@ void CastSocketMessagePort::OnMessage(VirtualConnectionRouter* router,
                                       ::cast::channel::CastMessage message) {
   OSP_DCHECK(router == router_);
   OSP_DCHECK(!socket || socket_.get() == socket);
+
+  // Message ports are for specific virtual connections, and do not pass-through
+  // broadcasts.
+  if (message.destination_id() == kBroadcastId) {
+    return;
+  }
+
   OSP_DVLOG << "Received a cast socket message";
   if (!client_) {
     OSP_DLOG_WARN << "Dropping message due to nullptr client_";
