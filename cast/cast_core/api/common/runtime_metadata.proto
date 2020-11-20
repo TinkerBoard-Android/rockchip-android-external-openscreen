@@ -50,4 +50,7 @@ message RuntimeCapabilities {
     // capabilities for NATIVE runtime.
     ApplicationCapabilities native_application_capabilities = 2;
   }
+
+  // Flags if heartbeat is supported.
+  bool heartbeat_supported = 3;
 }
