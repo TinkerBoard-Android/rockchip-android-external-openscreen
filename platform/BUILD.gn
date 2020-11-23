@@ -96,7 +96,7 @@ if (!build_with_chromium) {
         "__APPLE_USE_RFC_3542",
       ]
 
-      libs = [
+      frameworks = [
         "CoreFoundation.framework",
         "IOKit.framework",
       ]
