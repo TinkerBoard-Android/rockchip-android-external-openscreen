@@ -99,15 +99,14 @@ void LoopingFileCastAgent::OnNegotiated(
     SenderSession::ConfiguredSenders senders,
     capture_recommendations::Recommendations capture_recommendations) {
   if (senders.audio_sender == nullptr || senders.video_sender == nullptr) {
-    OSP_LOG_ERROR << "Missing either audio or video, so exiting...";
+    OSP_LOG_ERROR << "Missing both audio and video, so exiting...";
     return;
   }
 
-  OSP_VLOG << "Successfully negotiated with sender.";
-
+  OSP_LOG_INFO << "Streaming to " << connection_settings_->receiver_endpoint
+               << "...";
   file_sender_ = std::make_unique<LoopingFileSender>(
-      task_runner_, connection_settings_->path_to_file.c_str(),
-      connection_settings_->receiver_endpoint, senders,
+      environment_.get(), connection_settings_->path_to_file.c_str(), senders,
       connection_settings_->max_bitrate);
 }
 
