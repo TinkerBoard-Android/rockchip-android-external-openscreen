@@ -123,8 +123,13 @@ discovery::Config GetConfigSettings() {
   absl::optional<InterfaceInfo> loopback = GetLoopbackInterfaceForTesting();
   OSP_CHECK(loopback.has_value());
   discovery::Config::NetworkInfo::AddressFamilies address_families =
-      discovery::Config::NetworkInfo::kUseIpV4 |
-      discovery::Config::NetworkInfo::kUseIpV6;
+      discovery::Config::NetworkInfo::kNoAddressFamily;
+  if (loopback->GetIpAddressV4()) {
+    address_families |= discovery::Config::NetworkInfo::kUseIpV4;
+  }
+  if (loopback->GetIpAddressV6()) {
+    address_families |= discovery::Config::NetworkInfo::kUseIpV6;
+  }
   config.network_info.push_back({loopback.value(), address_families});
 
   return config;
