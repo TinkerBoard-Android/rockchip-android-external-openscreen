@@ -105,7 +105,8 @@ class ServiceReceiver : public discovery::DnsSdServiceWatcher<ServiceInfo> {
 
 class FailOnErrorReporting : public discovery::ReportingClient {
   void OnFatalError(Error error) override {
-    OSP_NOTREACHED() << "Fatal error received: '" << error << "'";
+    OSP_LOG_FATAL << "Fatal error received: '" << error << "'";
+    OSP_NOTREACHED();
   }
 
   void OnRecoverableError(Error error) override {
@@ -282,10 +283,8 @@ class DiscoveryE2ETest : public testing::Test {
       return;
     }
 
-    if (attempts++ > kMaxCheckLoopIterations) {
-      OSP_NOTREACHED() << "Service " << service_info.friendly_name
-                       << " publication failed.";
-    }
+    OSP_CHECK_LE(attempts++, kMaxCheckLoopIterations)
+        << "Service " << service_info.friendly_name << " publication failed.";
     task_runner_->PostTaskWithDelay(
         [this, info = std::move(service_info), has_been_seen,
          attempts]() mutable {
@@ -315,8 +314,7 @@ class DiscoveryE2ETest : public testing::Test {
       // TODO(crbug.com/openscreen/110): Log the discovered service instance.
       *has_been_seen = true;
     } else {
-      OSP_NOTREACHED() << "Found instance '" << service_info.friendly_name
-                       << "'!";
+      OSP_LOG_FATAL << "Found instance '" << service_info.friendly_name << "'!";
     }
   }
 };

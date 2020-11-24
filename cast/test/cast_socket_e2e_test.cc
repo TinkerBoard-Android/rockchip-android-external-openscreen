@@ -67,7 +67,7 @@ class SenderSocketsClient : public SenderSocketFactory::Client,
   void OnError(SenderSocketFactory* factory,
                const IPEndpoint& endpoint,
                Error error) override {
-    OSP_NOTREACHED() << error;
+    OSP_LOG_FATAL << error;
   }
 
   // VirtualConnectionRouter::SocketErrorHandler overrides.
@@ -112,7 +112,7 @@ class ReceiverSocketsClient
   }
 
   void OnError(ReceiverSocketFactory* factory, Error error) override {
-    OSP_NOTREACHED() << error;
+    OSP_LOG_FATAL << error;
   }
 
   // VirtualConnectionRouter::SocketErrorHandler overrides.

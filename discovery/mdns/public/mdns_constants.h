@@ -329,7 +329,6 @@ inline std::ostream& operator<<(std::ostream& output, DnsType type) {
   }
 
   OSP_NOTREACHED();
-  return output;
 }
 
 constexpr std::array<DnsType, 7> kSupportedDnsTypes = {

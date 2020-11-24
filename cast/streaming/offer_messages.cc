@@ -264,7 +264,6 @@ absl::string_view ToString(Stream::Type type) {
       return kVideoSourceType;
     default: {
       OSP_NOTREACHED();
-      return "";
     }
   }
 }
@@ -317,7 +316,6 @@ std::string CastMode::ToString() const {
       return kCastRemoting;
     default:
       OSP_NOTREACHED();
-      return "";
   }
 }
 

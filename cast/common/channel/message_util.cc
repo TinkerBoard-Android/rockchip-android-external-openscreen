@@ -37,7 +37,6 @@ std::string ToString(AppAvailabilityResult availability) {
       return "Unknown";
     default:
       OSP_NOTREACHED();
-      return "bad value";
   }
 }
 

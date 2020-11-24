@@ -5,6 +5,7 @@
 #include "osp/public/message_demuxer.h"
 
 #include <memory>
+#include <utility>
 
 #include "osp/impl/quic/quic_connection.h"
 #include "platform/base/error.h"
@@ -44,7 +45,6 @@ ErrorOr<uint64_t> MessageTypeDecoder::DecodeVarUint(
       return ReadBigEndian<uint64_t>(&buffer[0]) & ~(uint64_t{0xC0} << 56);
     default:
       OSP_NOTREACHED();
-      return Error::Code::kCborParsing;
   }
 }
 

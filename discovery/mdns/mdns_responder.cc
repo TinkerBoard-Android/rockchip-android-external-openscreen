@@ -52,8 +52,7 @@ std::chrono::seconds GetTtlForNsecTargetingType(DnsType type) {
       break;
   }
 
-  OSP_NOTREACHED() << "NSEC records do not support type " << type;
-  return std::chrono::seconds(0);
+  OSP_NOTREACHED();
 }
 
 MdnsRecord CreateNsecRecord(DomainName target_name,

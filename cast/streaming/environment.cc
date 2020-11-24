@@ -61,7 +61,6 @@ int Environment::GetMaxPacketSize() const {
       return kMaxRtpPacketSizeForIpv6UdpOnEthernet;
     default:
       OSP_NOTREACHED();
-      return 0;
   }
 }
 
