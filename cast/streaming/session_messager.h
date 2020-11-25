@@ -12,6 +12,7 @@
 
 #include "cast/common/public/message_port.h"
 #include "json/value.h"
+#include "util/flat_map.h"
 
 namespace openscreen {
 namespace cast {
@@ -64,8 +65,7 @@ class SessionMessager : public MessagePort::Client {
  private:
   // Since the number of message callbacks is expected to be low,
   // we use a vector of key, value pairs instead of a map.
-  std::vector<std::pair<std::string, MessageCallback>> callbacks_;
-
+  FlatMap<std::string, MessageCallback> callbacks_;
   MessagePort* const message_port_;
   ErrorCallback error_callback_;
 };

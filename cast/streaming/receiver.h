@@ -29,6 +29,7 @@
 #include "cast/streaming/ssrc.h"
 #include "platform/api/time.h"
 #include "util/alarm.h"
+#include "util/flat_map.h"
 
 namespace openscreen {
 namespace cast {
@@ -321,8 +322,7 @@ class Receiver {
   // The target playout delay is the amount of time between a frame's
   // capture/recording on the Sender and when it should be played-out at the
   // Receiver.
-  std::vector<std::pair<FrameId, std::chrono::milliseconds>>
-      playout_delay_changes_;
+  FlatMap<FrameId, std::chrono::milliseconds> playout_delay_changes_;
 
   // The consumer to notify when there are one or more frames completed and
   // ready to be consumed.

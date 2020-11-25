@@ -28,13 +28,8 @@ SessionMessager::~SessionMessager() {
 
 void SessionMessager::SetHandler(std::string message_type,
                                  SessionMessager::MessageCallback cb) {
-  OSP_DCHECK(std::none_of(
-      callbacks_.begin(), callbacks_.end(),
-      [message_type](std::pair<std::string, MessageCallback> pair) {
-        return pair.first == message_type;
-      }));
-
-  callbacks_.emplace_back(message_type, std::move(cb));
+  OSP_DCHECK(callbacks_.find(message_type) == callbacks_.end());
+  callbacks_.emplace_back(std::move(message_type), std::move(cb));
 }
 
 Error SessionMessager::SendMessage(SessionMessager::Message message) {
@@ -96,22 +91,21 @@ void SessionMessager::OnMessage(const std::string& source_id,
     result.clear();
   }
 
-  for (const auto& pair : callbacks_) {
-    if (pair.first == type) {
-      // Currently all body keys are the lowercase version of the message type
-      // key. This may need to be refactored if this is no longer the case.
-      absl::AsciiStrToLower(&type);
-      Json::Value body;
-      if (result.empty() || result == kResultOk) {
-        body = message_json.value()[type];
-      } else {
-        body = message_json.value()[kErrorMessageBody];
-      }
-      pair.second(Message{source_id.data(), message_namespace.data(),
-                          sequence_number, std::move(body)});
-      return;
-    }
+  auto it = callbacks_.find(type);
+  if (it == callbacks_.end()) {
+    return;
   }
+  // Currently all body keys are the lowercase version of the message type
+  // key. This may need to be refactored if this is no longer the case.
+  absl::AsciiStrToLower(&type);
+  Json::Value body;
+  if (result.empty() || result == kResultOk) {
+    body = message_json.value()[type];
+  } else {
+    body = message_json.value()[kErrorMessageBody];
+  }
+  it->second(Message{source_id.data(), message_namespace.data(),
+                     sequence_number, std::move(body)});
 }
 
 void SessionMessager::OnError(Error error) {
