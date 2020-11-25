@@ -44,7 +44,11 @@ TEST(FlatMapTest, Access) {
   EXPECT_EQ("baz", kSimpleFlatMap.at(2).second);
   EXPECT_EQ("", kSimpleFlatMap.at(3).second);
   // The error message varies widely depending on how the test is run.
+  // NOTE: Google Test doesn't support death tests on some platforms, such
+  // as iOS.
+#if defined(GTEST_HAS_DEATH_TEST)
   EXPECT_DEATH(kSimpleFlatMap.at(31337), ".*");
+#endif
 }
 
 TEST(FlatMapTest, ErasureAndEmplacement) {
@@ -57,8 +61,10 @@ TEST(FlatMapTest, ErasureAndEmplacement) {
   EXPECT_NE(mutable_vector.find(-1), mutable_vector.end());
 
   // We absolutely should fail to erase something that's not there.
+#if defined(GTEST_HAS_DEATH_TEST)
   EXPECT_DEATH(mutable_vector.erase_key(12345),
                ".*failed to erase: element not found.*");
+#endif
 }
 
 TEST(FlatMapTest, Mutation) {
