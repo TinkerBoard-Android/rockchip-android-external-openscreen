@@ -64,8 +64,6 @@ source_set("channel") {
     "channel/namespace_router.cc",
     "channel/namespace_router.h",
     "channel/virtual_connection.h",
-    "channel/virtual_connection_manager.cc",
-    "channel/virtual_connection_manager.h",
     "channel/virtual_connection_router.cc",
     "channel/virtual_connection_router.h",
     "public/cast_socket.h",
@@ -152,7 +150,6 @@ source_set("unittests") {
     "channel/connection_namespace_handler_unittest.cc",
     "channel/message_framer_unittest.cc",
     "channel/namespace_router_unittest.cc",
-    "channel/virtual_connection_manager_unittest.cc",
     "channel/virtual_connection_router_unittest.cc",
     "public/service_info_unittest.cc",
   ]

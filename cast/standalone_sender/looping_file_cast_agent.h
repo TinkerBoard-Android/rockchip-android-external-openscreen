@@ -13,7 +13,6 @@
 
 #include "absl/types/optional.h"
 #include "cast/common/channel/cast_socket_message_port.h"
-#include "cast/common/channel/virtual_connection_manager.h"
 #include "cast/common/channel/virtual_connection_router.h"
 #include "cast/common/public/cast_socket.h"
 #include "cast/sender/public/sender_socket_factory.h"
@@ -94,9 +93,8 @@ class LoopingFileCastAgent final
   void StopCurrentSession();
 
   // Member variables set as part of construction.
-  VirtualConnectionManager connection_manager_;
   TaskRunner* const task_runner_;
-  SerialDeletePtr<VirtualConnectionRouter> router_;
+  VirtualConnectionRouter router_;
   SerialDeletePtr<CastSocketMessagePort> message_port_;
   SerialDeletePtr<SenderSocketFactory> socket_factory_;
   SerialDeletePtr<TlsConnectionFactory> connection_factory_;

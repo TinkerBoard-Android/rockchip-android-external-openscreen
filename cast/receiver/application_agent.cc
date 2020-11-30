@@ -50,8 +50,7 @@ ApplicationAgent::ApplicationAgent(
     DeviceAuthNamespaceHandler::CredentialsProvider* credentials_provider)
     : task_runner_(task_runner),
       auth_handler_(credentials_provider),
-      connection_handler_(&connection_manager_, this),
-      router_(&connection_manager_),
+      connection_handler_(&router_, this),
       message_port_(&router_) {
   router_.AddHandlerForLocalId(kPlatformReceiverId, this);
 }

@@ -24,10 +24,8 @@ using DeviceMediaPolicy = SenderSocketFactory::DeviceMediaPolicy;
 
 LoopingFileCastAgent::LoopingFileCastAgent(TaskRunner* task_runner)
     : task_runner_(task_runner) {
-  router_ = MakeSerialDelete<VirtualConnectionRouter>(task_runner_,
-                                                      &connection_manager_);
   message_port_ =
-      MakeSerialDelete<CastSocketMessagePort>(task_runner_, router_.get());
+      MakeSerialDelete<CastSocketMessagePort>(task_runner_, &router_);
   socket_factory_ =
       MakeSerialDelete<SenderSocketFactory>(task_runner_, this, task_runner_);
   connection_factory_ = SerialDeletePtr<TlsConnectionFactory>(
@@ -49,7 +47,7 @@ void LoopingFileCastAgent::Connect(ConnectionSettings settings) {
   task_runner_->PostTask([this, policy] {
     wake_lock_ = ScopedWakeLock::Create(task_runner_);
     socket_factory_->Connect(connection_settings_->receiver_endpoint, policy,
-                             router_.get());
+                             &router_);
   });
 }
 
@@ -75,7 +73,7 @@ void LoopingFileCastAgent::OnConnected(SenderSocketFactory* factory,
 
   OSP_LOG_INFO << "Received connection from peer at: " << endpoint;
   message_port_->SetSocket(socket->GetWeakPtr());
-  router_->TakeSocket(this, std::move(socket));
+  router_.TakeSocket(this, std::move(socket));
   CreateAndStartSession();
 }
 
@@ -144,7 +142,7 @@ void LoopingFileCastAgent::StopCurrentSession() {
   current_session_.reset();
   environment_.reset();
   file_sender_.reset();
-  router_->CloseSocket(message_port_->GetSocketId());
+  router_.CloseSocket(message_port_->GetSocketId());
   message_port_->SetSocket(nullptr);
 }
 

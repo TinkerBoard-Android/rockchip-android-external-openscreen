@@ -4,6 +4,7 @@
 
 #include "cast/common/channel/connection_namespace_handler.h"
 
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -12,7 +13,6 @@
 #include "cast/common/channel/message_util.h"
 #include "cast/common/channel/proto/cast_channel.pb.h"
 #include "cast/common/channel/virtual_connection.h"
-#include "cast/common/channel/virtual_connection_manager.h"
 #include "cast/common/channel/virtual_connection_router.h"
 #include "cast/common/public/cast_socket.h"
 #include "util/json/json_serialization.h"
@@ -82,11 +82,11 @@ VirtualConnection::CloseReason GetCloseReason(
 }  // namespace
 
 ConnectionNamespaceHandler::ConnectionNamespaceHandler(
-    VirtualConnectionManager* vc_manager,
+    VirtualConnectionRouter* vc_router,
     VirtualConnectionPolicy* vc_policy)
-    : vc_manager_(vc_manager), vc_policy_(vc_policy) {
-  OSP_DCHECK(vc_manager);
-  OSP_DCHECK(vc_policy);
+    : vc_router_(vc_router), vc_policy_(vc_policy) {
+  OSP_DCHECK(vc_router_);
+  OSP_DCHECK(vc_policy_);
 }
 
 ConnectionNamespaceHandler::~ConnectionNamespaceHandler() = default;
@@ -120,17 +120,16 @@ void ConnectionNamespaceHandler::OnMessage(VirtualConnectionRouter* router,
 
   absl::string_view type_str = type.value();
   if (type_str == kMessageTypeConnect) {
-    HandleConnect(router, socket, std::move(message), std::move(value));
+    HandleConnect(socket, std::move(message), std::move(value));
   } else if (type_str == kMessageTypeClose) {
-    HandleClose(router, socket, std::move(message), std::move(value));
+    HandleClose(socket, std::move(message), std::move(value));
   } else {
     // NOTE: Unknown message type so ignore it.
     // TODO(btolsch): Should be included in future error reporting.
   }
 }
 
-void ConnectionNamespaceHandler::HandleConnect(VirtualConnectionRouter* router,
-                                               CastSocket* socket,
+void ConnectionNamespaceHandler::HandleConnect(CastSocket* socket,
                                                CastMessage message,
                                                Json::Value parsed_message) {
   if (message.destination_id() == kBroadcastId ||
@@ -142,7 +141,7 @@ void ConnectionNamespaceHandler::HandleConnect(VirtualConnectionRouter* router,
                                  std::move(message.source_id()),
                                  ToCastSocketId(socket)};
   if (!vc_policy_->IsConnectionAllowed(virtual_conn)) {
-    SendClose(router, std::move(virtual_conn));
+    SendClose(virtual_conn);
     return;
   }
 
@@ -153,7 +152,7 @@ void ConnectionNamespaceHandler::HandleConnect(VirtualConnectionRouter* router,
     int int_type = maybe_conn_type.value();
     if (int_type < static_cast<int>(VirtualConnection::Type::kMinValue) ||
         int_type > static_cast<int>(VirtualConnection::Type::kMaxValue)) {
-      SendClose(router, std::move(virtual_conn));
+      SendClose(virtual_conn);
       return;
     }
     conn_type = static_cast<VirtualConnection::Type>(int_type);
@@ -202,20 +201,19 @@ void ConnectionNamespaceHandler::HandleConnect(VirtualConnectionRouter* router,
   // maintains compatibility with older senders that don't send a version and
   // don't expect a response.
   if (negotiated_version) {
-    SendConnectedResponse(router, virtual_conn, negotiated_version.value());
+    SendConnectedResponse(virtual_conn, negotiated_version.value());
   }
 
-  vc_manager_->AddConnection(std::move(virtual_conn), std::move(data));
+  vc_router_->AddConnection(std::move(virtual_conn), std::move(data));
 }
 
-void ConnectionNamespaceHandler::HandleClose(VirtualConnectionRouter* router,
-                                             CastSocket* socket,
+void ConnectionNamespaceHandler::HandleClose(CastSocket* socket,
                                              CastMessage message,
                                              Json::Value parsed_message) {
   VirtualConnection virtual_conn{std::move(message.destination_id()),
                                  std::move(message.source_id()),
                                  ToCastSocketId(socket)};
-  if (!vc_manager_->GetConnectionData(virtual_conn)) {
+  if (!vc_router_->GetConnectionData(virtual_conn)) {
     return;
   }
 
@@ -224,11 +222,11 @@ void ConnectionNamespaceHandler::HandleClose(VirtualConnectionRouter* router,
   OSP_DVLOG << "Connection closed (reason: " << reason
             << "): " << virtual_conn.local_id << ", " << virtual_conn.peer_id
             << ", " << virtual_conn.socket_id;
-  vc_manager_->RemoveConnection(virtual_conn, reason);
+  vc_router_->RemoveConnection(virtual_conn, reason);
 }
 
-void ConnectionNamespaceHandler::SendClose(VirtualConnectionRouter* router,
-                                           VirtualConnection virtual_conn) {
+void ConnectionNamespaceHandler::SendClose(
+    const VirtualConnection& virtual_conn) {
   Json::Value close_message(Json::ValueType::objectValue);
   close_message[kMessageKeyType] = kMessageTypeClose;
 
@@ -237,13 +235,12 @@ void ConnectionNamespaceHandler::SendClose(VirtualConnectionRouter* router,
     return;
   }
 
-  router->Send(
+  vc_router_->Send(
       std::move(virtual_conn),
       MakeSimpleUTF8Message(kConnectionNamespace, std::move(result.value())));
 }
 
 void ConnectionNamespaceHandler::SendConnectedResponse(
-    VirtualConnectionRouter* router,
     const VirtualConnection& virtual_conn,
     int max_protocol_version) {
   Json::Value connected_message(Json::ValueType::objectValue);
@@ -256,8 +253,9 @@ void ConnectionNamespaceHandler::SendConnectedResponse(
     return;
   }
 
-  router->Send(virtual_conn, MakeSimpleUTF8Message(kConnectionNamespace,
-                                                   std::move(result.value())));
+  vc_router_->Send(
+      virtual_conn,
+      MakeSimpleUTF8Message(kConnectionNamespace, std::move(result.value())));
 }
 
 }  // namespace cast

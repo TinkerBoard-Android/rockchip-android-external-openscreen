@@ -9,7 +9,6 @@
 #include "cast/common/channel/message_util.h"
 #include "cast/common/channel/proto/cast_channel.pb.h"
 #include "cast/common/channel/virtual_connection.h"
-#include "cast/common/channel/virtual_connection_manager.h"
 
 namespace openscreen {
 namespace cast {
@@ -51,8 +50,7 @@ void CastSocketMessagePort::ResetClient() {
 
   client_ = nullptr;
   router_->RemoveHandlerForLocalId(client_sender_id_);
-  router_->manager()->RemoveConnectionsByLocalId(
-      client_sender_id_, VirtualConnection::CloseReason::kClosedBySelf);
+  router_->RemoveConnectionsByLocalId(client_sender_id_);
   client_sender_id_.clear();
 }
 
@@ -72,9 +70,8 @@ void CastSocketMessagePort::PostMessage(
 
   VirtualConnection connection{client_sender_id_, destination_sender_id,
                                socket_->socket_id()};
-  if (!router_->manager()->GetConnectionData(connection)) {
-    router_->manager()->AddConnection(connection,
-                                      VirtualConnection::AssociatedData{});
+  if (!router_->GetConnectionData(connection)) {
+    router_->AddConnection(connection, VirtualConnection::AssociatedData{});
   }
 
   const Error send_error = router_->Send(

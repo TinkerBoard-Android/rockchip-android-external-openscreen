@@ -13,7 +13,6 @@ namespace openscreen {
 namespace cast {
 
 struct VirtualConnection;
-class VirtualConnectionManager;
 class VirtualConnectionRouter;
 
 // Handles CastMessages in the connection namespace by opening and closing
@@ -28,8 +27,8 @@ class ConnectionNamespaceHandler final : public CastMessageHandler {
         const VirtualConnection& virtual_conn) const = 0;
   };
 
-  // Both |vc_manager| and |vc_policy| should outlive this object.
-  ConnectionNamespaceHandler(VirtualConnectionManager* vc_manager,
+  // Both |vc_router| and |vc_policy| should outlive this object.
+  ConnectionNamespaceHandler(VirtualConnectionRouter* vc_router,
                              VirtualConnectionPolicy* vc_policy);
   ~ConnectionNamespaceHandler() override;
 
@@ -39,22 +38,18 @@ class ConnectionNamespaceHandler final : public CastMessageHandler {
                  ::cast::channel::CastMessage message) override;
 
  private:
-  void HandleConnect(VirtualConnectionRouter* router,
-                     CastSocket* socket,
+  void HandleConnect(CastSocket* socket,
                      ::cast::channel::CastMessage message,
                      Json::Value parsed_message);
-  void HandleClose(VirtualConnectionRouter* router,
-                   CastSocket* socket,
+  void HandleClose(CastSocket* socket,
                    ::cast::channel::CastMessage message,
                    Json::Value parsed_message);
 
-  void SendClose(VirtualConnectionRouter* router,
-                 VirtualConnection virtual_conn);
-  void SendConnectedResponse(VirtualConnectionRouter* router,
-                             const VirtualConnection& virtual_conn,
+  void SendClose(const VirtualConnection& virtual_conn);
+  void SendConnectedResponse(const VirtualConnection& virtual_conn,
                              int max_protocol_version);
 
-  VirtualConnectionManager* const vc_manager_;
+  VirtualConnectionRouter* const vc_router_;
   VirtualConnectionPolicy* const vc_policy_;
 };
 
