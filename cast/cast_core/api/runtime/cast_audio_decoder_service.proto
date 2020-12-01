@@ -239,7 +239,7 @@ message GetMediaTimeResponse {
 //
 // Note that the received ordering between different RPC calls is not
 // guaranteed to match the sent order.
-service CastAudioDecoder {
+service CastAudioDecoderService {
   // Initializes the service and places the pipeline into the 'Stopped' state.
   // This must be the first call received by the server, and no other calls
   // may be sent prior to receiving this call's response.
