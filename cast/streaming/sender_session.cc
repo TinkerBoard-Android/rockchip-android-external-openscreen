@@ -35,7 +35,6 @@ AudioStream CreateStream(int index, const AudioCaptureConfig& config) {
       Stream{index,
              Stream::Type::kAudioSource,
              config.channels,
-             CodecToString(config.codec),
              GetPayloadType(config.codec),
              GenerateSsrc(true /*high_priority*/),
              config.target_playout_delay,
@@ -44,6 +43,7 @@ AudioStream CreateStream(int index, const AudioCaptureConfig& config) {
              false /* receiver_rtcp_event_log */,
              {} /* receiver_rtcp_dscp */,
              config.sample_rate},
+      config.codec,
       (config.bit_rate >= capture_recommendations::kDefaultAudioMinBitRate)
           ? config.bit_rate
           : capture_recommendations::kDefaultAudioMaxBitRate};
@@ -63,7 +63,6 @@ VideoStream CreateStream(int index, const VideoCaptureConfig& config) {
       Stream{index,
              Stream::Type::kVideoSource,
              kVideoStreamChannelCount,
-             CodecToString(config.codec),
              GetPayloadType(config.codec),
              GenerateSsrc(false /*high_priority*/),
              config.target_playout_delay,
@@ -72,6 +71,7 @@ VideoStream CreateStream(int index, const VideoCaptureConfig& config) {
              false /* receiver_rtcp_event_log */,
              {} /* receiver_rtcp_dscp */,
              kRtpVideoTimebase},
+      config.codec,
       SimpleFraction{config.max_frame_rate.numerator,
                      config.max_frame_rate.denominator},
       (config.max_bit_rate >

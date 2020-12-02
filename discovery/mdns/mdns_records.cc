@@ -363,7 +363,6 @@ TxtRecordRdata::TxtRecordRdata() = default;
 
 TxtRecordRdata::TxtRecordRdata(std::vector<Entry> texts) {
   ErrorOr<TxtRecordRdata> rdata = TxtRecordRdata::TryCreate(std::move(texts));
-  OSP_DCHECK(rdata.is_value());
   *this = std::move(rdata.value());
 }
 

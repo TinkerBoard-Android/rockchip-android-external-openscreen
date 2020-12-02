@@ -33,10 +33,10 @@ template <typename Stream, typename Codec>
 const Stream* SelectStream(const std::vector<Codec>& preferred_codecs,
                            const std::vector<Stream>& offered_streams) {
   for (auto codec : preferred_codecs) {
-    const std::string codec_name = CodecToString(codec);
     for (const Stream& offered_stream : offered_streams) {
-      if (offered_stream.stream.codec_name == codec_name) {
-        OSP_DVLOG << "Selected " << codec_name << " as codec for streaming";
+      if (offered_stream.codec == codec) {
+        OSP_DVLOG << "Selected " << CodecToString(codec)
+                  << " as codec for streaming";
         return &offered_stream;
       }
     }
@@ -190,9 +190,8 @@ ConfiguredReceivers ReceiverSession::SpawnReceivers(const AudioStream* audio,
   if (audio) {
     current_audio_receiver_ = ConstructReceiver(audio->stream);
     audio_config = AudioCaptureConfig{
-        StringToAudioCodec(audio->stream.codec_name), audio->stream.channels,
-        audio->bit_rate, audio->stream.rtp_timebase,
-        audio->stream.target_delay};
+        audio->codec, audio->stream.channels, audio->bit_rate,
+        audio->stream.rtp_timebase, audio->stream.target_delay};
   }
 
   VideoCaptureConfig video_config;
@@ -203,7 +202,7 @@ ConfiguredReceivers ReceiverSession::SpawnReceivers(const AudioStream* audio,
                    std::back_inserter(display_resolutions),
                    ToDisplayResolution);
     video_config =
-        VideoCaptureConfig{StringToVideoCodec(video->stream.codec_name),
+        VideoCaptureConfig{video->codec,
                            FrameRate{video->max_frame_rate.numerator,
                                      video->max_frame_rate.denominator},
                            video->max_bit_rate, std::move(display_resolutions),

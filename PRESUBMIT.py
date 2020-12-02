@@ -51,15 +51,61 @@ def _CheckDeps(input_api, output_api):
     return [output_api.PresubmitError(v) for v in deps_results]
 
 
+# Matches OSP_CHECK(foo.is_value()) or OSP_DCHECK(foo.is_value())
+_RE_PATTERN_VALUE_CHECK = re.compile(
+    r'\s*OSP_D?CHECK\([^)]*\.is_value\(\)\);\s*')
+
 # Matches Foo(Foo&&) when not followed by noexcept.
 _RE_PATTERN_MOVE_WITHOUT_NOEXCEPT = re.compile(
     r'\s*(?P<classname>\w+)\((?P=classname)&&[^)]*\)\s*(?!noexcept)\s*[{;=]')
 
 
+def _CheckNoRegexMatches(regex,
+                         filename,
+                         clean_lines,
+                         linenum,
+                         error,
+                         error_type,
+                         error_msg,
+                         include_cpp_files=True):
+    """Checks that there are no matches for a specific regex.
+
+  Args:
+    regex: regex to use for matching.
+    filename: The name of the current file.
+    clean_lines: A CleansedLines instance containing the file.
+    linenum: The number of the line to check.
+    error: The function to call with any errors found.
+    error_type: type of error, e.g. runtime/noexcept
+    error_msg: Specific message to prepend when regex match is found.
+  """
+    if not include_cpp_files and not filename.endswith('.h'):
+        return
+
+    line = clean_lines.elided[linenum]
+    matched = regex.match(line)
+    if matched:
+        error(filename, linenum, error_type, 4,
+              'Error: {} at {}'.format(error_msg,
+                                       matched.group(0).strip()))
+
+
+def _CheckNoValueDchecks(filename, clean_lines, linenum, error):
+    """Checks that there are no OSP_DCHECK(foo.is_value()) instances.
+
+    filename: The name of the current file.
+    clean_lines: A CleansedLines instance containing the file.
+    linenum: The number of the line to check.
+    error: The function to call with any errors found.
+    """
+    _CheckNoRegexMatches(_RE_PATTERN_VALUE_CHECK, filename, clean_lines,
+                         linenum, error, 'runtime/is_value_dchecks',
+                         'Unnecessary CHECK for ErrorOr::is_value()')
+
+
 def _CheckNoexceptOnMove(filename, clean_lines, linenum, error):
     """Checks that move constructors are declared with 'noexcept'.
 
-  Args:
     filename: The name of the current file.
     clean_lines: A CleansedLines instance containing the file.
     linenum: The number of the line to check.
@@ -67,17 +113,9 @@ def _CheckNoexceptOnMove(filename, clean_lines, linenum, error):
   """
     # We only check headers as noexcept is meaningful on declarations, not
     # definitions.  This may skip some definitions in .cc files though.
-    if not filename.endswith('.h'):
-        return
-
-    line = clean_lines.elided[linenum]
-    matched = _RE_PATTERN_MOVE_WITHOUT_NOEXCEPT.match(line)
-    if matched:
-        error(
-            filename, linenum, 'runtime/noexcept', 4,
-            'Move constructor of {} not declared \'noexcept\' in {}'.format(
-                matched.group('classname'),
-                matched.group(0).strip()))
+    _CheckNoRegexMatches(_RE_PATTERN_MOVE_WITHOUT_NOEXCEPT, filename,
+                         clean_lines, linenum, error, 'runtime/noexcept',
+                         'Move constructor not declared \'noexcept\'', False)
 
 # - We disable c++11 header checks since Open Screen allows them.
 # - We disable whitespace/braces because of various false positives.
@@ -98,7 +136,7 @@ def _CheckChangeLintsClean(input_api, output_api):
     CPPLINT_VERBOSE_LEVEL = 4
     for file_name in files:
         cpplint.ProcessFile(file_name, CPPLINT_VERBOSE_LEVEL,
-                            [_CheckNoexceptOnMove])
+                            [_CheckNoexceptOnMove, _CheckNoValueDchecks])
 
     if cpplint._cpplint_state.error_count:
         if input_api.is_committing:

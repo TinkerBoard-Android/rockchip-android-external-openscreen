@@ -26,27 +26,19 @@ constexpr EnumNameTable<VideoCodec, 4> kVideoCodecNames{
 }  // namespace
 
 const char* CodecToString(AudioCodec codec) {
-  ErrorOr<const char*> name = GetEnumName(kAudioCodecNames, codec);
-  OSP_DCHECK(name.is_value());
-  return name.value();
+  return GetEnumName(kAudioCodecNames, codec).value();
 }
 
-AudioCodec StringToAudioCodec(absl::string_view name) {
-  ErrorOr<AudioCodec> enum_ = GetEnum(kAudioCodecNames, name);
-  OSP_DCHECK(enum_.is_value());
-  return enum_.value();
+ErrorOr<AudioCodec> StringToAudioCodec(absl::string_view name) {
+  return GetEnum(kAudioCodecNames, name);
 }
 
 const char* CodecToString(VideoCodec codec) {
-  ErrorOr<const char*> name = GetEnumName(kVideoCodecNames, codec);
-  OSP_DCHECK(name.is_value());
-  return name.value();
+  return GetEnumName(kVideoCodecNames, codec).value();
 }
 
-VideoCodec StringToVideoCodec(absl::string_view name) {
-  ErrorOr<VideoCodec> enum_ = GetEnum(kVideoCodecNames, name);
-  OSP_DCHECK(enum_.is_value());
-  return enum_.value();
+ErrorOr<VideoCodec> StringToVideoCodec(absl::string_view name) {
+  return GetEnum(kVideoCodecNames, name);
 }
 
 }  // namespace cast

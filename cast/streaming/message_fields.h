@@ -9,6 +9,7 @@
 
 #include "absl/strings/string_view.h"
 #include "cast/streaming/constants.h"
+#include "platform/base/error.h"
 
 namespace openscreen {
 namespace cast {
@@ -37,10 +38,10 @@ constexpr char kErrorDescription[] = "description";
 
 // Conversion methods for codec message fields.
 const char* CodecToString(AudioCodec codec);
-AudioCodec StringToAudioCodec(absl::string_view name);
+ErrorOr<AudioCodec> StringToAudioCodec(absl::string_view name);
 
 const char* CodecToString(VideoCodec codec);
-VideoCodec StringToVideoCodec(absl::string_view name);
+ErrorOr<VideoCodec> StringToVideoCodec(absl::string_view name);
 
 }  // namespace cast
 }  // namespace openscreen

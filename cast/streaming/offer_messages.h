@@ -11,6 +11,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "cast/streaming/message_fields.h"
 #include "cast/streaming/rtp_defines.h"
 #include "cast/streaming/session_config.h"
 #include "json/value.h"
@@ -51,7 +52,6 @@ struct Stream {
 
   // Default channel count is 1, e.g. for video.
   int channels = 0;
-  std::string codec_name = {};
   RtpPayloadType rtp_payload_type = {};
   Ssrc ssrc = {};
   std::chrono::milliseconds target_delay = {};
@@ -69,6 +69,7 @@ struct AudioStream {
   ErrorOr<Json::Value> ToJson() const;
 
   Stream stream = {};
+  AudioCodec codec;
   int bit_rate = 0;
 };
 
@@ -83,6 +84,7 @@ struct VideoStream {
   ErrorOr<Json::Value> ToJson() const;
 
   Stream stream = {};
+  VideoCodec codec;
   SimpleFraction max_frame_rate;
   int max_bit_rate = 0;
   std::string protection = {};
