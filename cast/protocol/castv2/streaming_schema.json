@@ -49,7 +49,6 @@
         "codecName",
         "rtpPayloadType",
         "ssrc",
-        "targetDelay",
         "aesKey",
         "aesIvMask",
         "timeBase"
@@ -175,7 +174,7 @@
         "receiverGetStatus": {"type": "boolean"},
         "rtpExtensions": {"$ref": "#/definitions/rtp_extensions"}
       },
-      "required": ["udpPort", "constraints", "sendIndexes", "ssrcs"]
+      "required": ["udpPort", "sendIndexes", "ssrcs"]
     },
     "status_response": {
       "properties": {

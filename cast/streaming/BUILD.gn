@@ -68,6 +68,10 @@ source_set("common") {
     "../../platform",
     "../../util",
   ]
+
+  if (!build_with_chromium) {
+    deps += [ "../protocol:castv2" ]
+  }
 }
 
 source_set("receiver") {

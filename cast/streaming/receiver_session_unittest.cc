@@ -393,12 +393,11 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomCodecPreferences) {
 
 TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
   auto constraints = std::make_unique<Constraints>(Constraints{
-      AudioConstraints{1, 2, 3, 4},
-
+      AudioConstraints{48001, 2, 32001, 32002, milliseconds(3001)},
       VideoConstraints{3.14159,
                        absl::optional<Dimensions>(
                            Dimensions{320, 240, SimpleFraction{24, 1}}),
-                       Dimensions{1920, 1080, SimpleFraction{144, 1}}, 3000,
+                       Dimensions{1920, 1080, SimpleFraction{144, 1}}, 300000,
                        90000000, milliseconds(1000)}});
 
   auto display = std::make_unique<DisplayDescription>(DisplayDescription{
@@ -444,11 +443,11 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
 
   const Json::Value& audio = constraints_json["audio"];
   ASSERT_TRUE(audio.isObject());
-  EXPECT_EQ(4, audio["maxBitRate"].asInt());
+  EXPECT_EQ(32002, audio["maxBitRate"].asInt());
   EXPECT_EQ(2, audio["maxChannels"].asInt());
-  EXPECT_EQ(0, audio["maxDelay"].asInt());
-  EXPECT_EQ(1, audio["maxSampleRate"].asInt());
-  EXPECT_EQ(3, audio["minBitRate"].asInt());
+  EXPECT_EQ(3001, audio["maxDelay"].asInt());
+  EXPECT_EQ(48001, audio["maxSampleRate"].asInt());
+  EXPECT_EQ(32001, audio["minBitRate"].asInt());
 
   const Json::Value& video = constraints_json["video"];
   ASSERT_TRUE(video.isObject());
@@ -458,7 +457,7 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
   EXPECT_EQ(1920, video["maxDimensions"]["width"].asInt());
   EXPECT_EQ(1080, video["maxDimensions"]["height"].asInt());
   EXPECT_DOUBLE_EQ(3.14159, video["maxPixelsPerSecond"].asDouble());
-  EXPECT_EQ(3000, video["minBitRate"].asInt());
+  EXPECT_EQ(300000, video["minBitRate"].asInt());
   EXPECT_EQ("24", video["minDimensions"]["frameRate"].asString());
   EXPECT_EQ(320, video["minDimensions"]["width"].asInt());
   EXPECT_EQ(240, video["minDimensions"]["height"].asInt());

@@ -55,6 +55,7 @@ source_set("util") {
     "saturate_cast.h",
     "simple_fraction.cc",
     "simple_fraction.h",
+    "std_util.cc",
     "std_util.h",
     "stringprintf.cc",
     "stringprintf.h",
@@ -69,10 +70,12 @@ source_set("util") {
     "yet_another_bit_vector.h",
   ]
 
-  public_deps = [ "../third_party/jsoncpp" ]
+  public_deps = [
+    "../third_party/abseil",
+    "../third_party/jsoncpp",
+  ]
 
   deps = [
-    "../third_party/abseil",
     "../third_party/boringssl",
     "../third_party/mozilla",
   ]
