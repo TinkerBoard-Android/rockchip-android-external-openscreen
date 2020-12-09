@@ -87,9 +87,13 @@ ConnectionNamespaceHandler::ConnectionNamespaceHandler(
     : vc_router_(vc_router), vc_policy_(vc_policy) {
   OSP_DCHECK(vc_router_);
   OSP_DCHECK(vc_policy_);
+
+  vc_router_->set_connection_namespace_handler(this);
 }
 
-ConnectionNamespaceHandler::~ConnectionNamespaceHandler() = default;
+ConnectionNamespaceHandler::~ConnectionNamespaceHandler() {
+  vc_router_->set_connection_namespace_handler(nullptr);
+}
 
 void ConnectionNamespaceHandler::OpenRemoteConnection(
     VirtualConnection conn,

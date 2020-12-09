@@ -137,10 +137,6 @@ void ApplicationAgent::OnMessage(VirtualConnectionRouter* router,
   }
 
   const std::string& ns = message.namespace_();
-  if (ns == kConnectionNamespace) {
-    connection_handler_.OnMessage(router, socket, std::move(message));
-    return;
-  }
   if (ns == kAuthNamespace) {
     auth_handler_.OnMessage(router, socket, std::move(message));
     return;

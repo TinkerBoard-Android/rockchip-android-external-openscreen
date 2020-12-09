@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "cast/common/channel/cast_message_handler.h"
+#include "cast/common/channel/connection_namespace_handler.h"
 #include "cast/common/channel/message_util.h"
 #include "cast/common/channel/proto/cast_channel.pb.h"
 #include "util/osp_logging.h"
@@ -203,6 +204,21 @@ void VirtualConnectionRouter::OnMessage(CastSocket* socket,
       entry.second->OnMessage(this, socket, message);
     }
   } else {
+    // Connection namespace messages are weird: The message.source_id() and
+    // message.destination_id() are NOT treated as "envelope routing
+    // information," like for all other namespaces. Instead, they are considered
+    // part of the payload data for CONNECT/CLOSE requests. Thus, they require
+    // special-case handling here.
+    if (message.namespace_() == kConnectionNamespace) {
+      if (connection_handler_) {
+        connection_handler_->OnMessage(this, socket, std::move(message));
+      }
+      return;
+    }
+
+    // Drop all messages for virtual connections that do not yet exist.
+    // Exception: All transport namespace messages (e.g., device auth,
+    // heartbeats, etc.); because these are always assumed to have a route.
     if (!IsTransportNamespace(message.namespace_()) &&
         !GetConnectionData(VirtualConnection{local_id, message.source_id(),
                                              socket->socket_id()})) {

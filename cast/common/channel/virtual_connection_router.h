@@ -19,6 +19,7 @@ namespace openscreen {
 namespace cast {
 
 class CastMessageHandler;
+class ConnectionNamespaceHandler;
 
 // Handles CastSockets by routing received messages to appropriate message
 // handlers based on the VirtualConnection's local ID and sending messages over
@@ -104,6 +105,13 @@ class VirtualConnectionRouter final : public CastSocket::Client {
   void OnMessage(CastSocket* socket,
                  ::cast::channel::CastMessage message) override;
 
+ protected:
+  friend class ConnectionNamespaceHandler;
+
+  void set_connection_namespace_handler(ConnectionNamespaceHandler* handler) {
+    connection_handler_ = handler;
+  }
+
  private:
   // This struct simply stores the remainder of the data {VirtualConnection,
   // VirtualConnection::AssociatedData} that is not broken up into map keys for
@@ -118,9 +126,12 @@ class VirtualConnectionRouter final : public CastSocket::Client {
     SocketErrorHandler* error_handler;
   };
 
+  ConnectionNamespaceHandler* connection_handler_ = nullptr;
+
   std::map<int /* socket_id */,
            std::multimap<std::string /* local_id */, VCTail>>
       connections_;
+
   std::map<int, SocketWithHandler> sockets_;
   std::map<std::string /* local_id */, CastMessageHandler*> endpoints_;
 };

@@ -32,7 +32,7 @@ class VirtualConnectionRouter;
 // disallowing connections based on the VirtualConnectionPolicy, and
 // ConnectionNamespaceHandler will report new/closed connections to the local
 // VirtualConnectionRouter to enable/disable message routing.
-class ConnectionNamespaceHandler final : public CastMessageHandler {
+class ConnectionNamespaceHandler : public CastMessageHandler {
  public:
   class VirtualConnectionPolicy {
    public:

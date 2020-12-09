@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "cast/common/channel/connection_namespace_handler.h"
 #include "cast/common/channel/message_util.h"
 #include "cast/common/channel/proto/cast_channel.pb.h"
 #include "cast/common/channel/testing/fake_cast_socket.h"
@@ -384,6 +385,52 @@ TEST_F(VirtualConnectionRouterTest, BroadcastsFromRemoteSource) {
   EXPECT_CALL(bob, OnMessage(_, _, _)).Times(0);
   EXPECT_CALL(charlie, OnMessage(&local_router_, local_socket_, _)).Times(1);
   ASSERT_TRUE(remote_router_.BroadcastFromLocalPeer("wendy", message).ok());
+}
+
+// Tests that the VirtualConnectionRouter treats kConnectionNamespace messages
+// as a special case. The details of this are described in the implementation of
+// VirtualConnectionRouter::OnMessage().
+TEST_F(VirtualConnectionRouterTest, HandlesConnectionMessagesAsSpecialCase) {
+  class MockConnectionNamespaceHandler final
+      : public ConnectionNamespaceHandler,
+        public ConnectionNamespaceHandler::VirtualConnectionPolicy {
+   public:
+    explicit MockConnectionNamespaceHandler(VirtualConnectionRouter* vc_router)
+        : ConnectionNamespaceHandler(vc_router, this) {}
+    ~MockConnectionNamespaceHandler() final = default;
+    MOCK_METHOD(void,
+                OnMessage,
+                (VirtualConnectionRouter * router,
+                 CastSocket* socket,
+                 ::cast::channel::CastMessage message),
+                (final));
+    bool IsConnectionAllowed(
+        const VirtualConnection& virtual_conn) const final {
+      return true;
+    }
+  };
+  MockConnectionNamespaceHandler connection_handler(&local_router_);
+
+  MockCastMessageHandler alice;
+  local_router_.AddHandlerForLocalId("alice", &alice);
+
+  CastMessage message;
+  message.set_protocol_version(
+      ::cast::channel::CastMessage_ProtocolVersion_CASTV2_1_0);
+  message.set_source_id(kPlatformSenderId);
+  message.set_destination_id("alice");
+  message.set_namespace_(kConnectionNamespace);
+
+  CastMessage message_received;
+  EXPECT_CALL(connection_handler, OnMessage(&local_router_, local_socket_, _))
+      .WillOnce(SaveArg<2>(&message_received))
+      .RetiresOnSaturation();
+  EXPECT_CALL(alice, OnMessage(_, _, _)).Times(0);
+  local_router_.OnMessage(local_socket_, message);
+
+  EXPECT_EQ(kPlatformSenderId, message.source_id());
+  EXPECT_EQ("alice", message.destination_id());
+  EXPECT_EQ(kConnectionNamespace, message.namespace_());
 }
 
 }  // namespace cast
