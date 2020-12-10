@@ -184,6 +184,7 @@ class Error {
     kOperationCancelled,
 
     // Cast streaming errors
+    kTypeError,
     kUnknownCodec,
   };
 

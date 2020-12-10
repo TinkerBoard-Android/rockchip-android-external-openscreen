@@ -27,9 +27,9 @@ namespace cast {
 // [kMinTargetDelay, kMaxTargetDelay], it will be set to
 // kDefaultTargetPlayoutDelay.
 constexpr auto kMinTargetPlayoutDelay = std::chrono::milliseconds(0);
-constexpr auto kMaxTargetPlayoutDelay = std::chrono::milliseconds(2000);
+constexpr auto kMaxTargetPlayoutDelay = std::chrono::milliseconds(5000);
 
-// If the sender provides an invalid maximum frame rate, it will
+// If the sender provides an invalid maximum frame rate, it ill
 // be set to kDefaultMaxFrameRate.
 constexpr int kDefaultMaxFrameRate = 30;
 
@@ -94,22 +94,13 @@ struct VideoStream {
   std::string error_recovery_mode = {};
 };
 
-struct CastMode {
- public:
-  enum class Type : uint8_t { kMirroring, kRemoting };
-
-  static CastMode Parse(absl::string_view value);
-  std::string ToString() const;
-
-  // Default cast mode is mirroring.
-  Type type = Type::kMirroring;
-};
+enum class CastMode : uint8_t { kMirroring, kRemoting };
 
 struct Offer {
   static ErrorOr<Offer> Parse(const Json::Value& root);
   ErrorOr<Json::Value> ToJson() const;
 
-  CastMode cast_mode = {};
+  CastMode cast_mode = CastMode::kMirroring;
   // This field is poorly named in the spec (receiverGetStatus), so we use
   // a more descriptive name here.
   bool supports_wifi_status_reporting = {};

@@ -288,7 +288,7 @@ class ReceiverSessionTest : public ::testing::Test {
   }
 
   void SetUp() {
-    message_port_ = std::make_unique<SimpleMessagePort>();
+    message_port_ = std::make_unique<SimpleMessagePort>("sender-12345");
     environment_ = MakeEnvironment();
     session_ = std::make_unique<ReceiverSession>(
         &client_, environment_.get(), message_port_.get(),
@@ -296,6 +296,14 @@ class ReceiverSessionTest : public ::testing::Test {
   }
 
  protected:
+  void AssertGotAnErrorAnswerResponse() {
+    const auto& messages = message_port_->posted_messages();
+    ASSERT_EQ(1u, messages.size());
+
+    auto message_body = json::Parse(messages[0]);
+    ExpectIsErrorAnswerMessage(message_body);
+  }
+
   StrictMock<FakeClient> client_;
   FakeClock clock_;
   std::unique_ptr<MockEnvironment> environment_;
@@ -418,7 +426,7 @@ TEST_F(ReceiverSessionTest, CanNegotiateWithCustomConstraints) {
   message_port_->ReceiveMessage(kValidOfferMessage);
 
   const auto& messages = message_port_->posted_messages();
-  EXPECT_EQ(1u, messages.size());
+  ASSERT_EQ(1u, messages.size());
 
   auto message_body = json::Parse(messages[0]);
   ASSERT_TRUE(message_body.is_value());
@@ -526,11 +534,7 @@ TEST_F(ReceiverSessionTest, HandlesNoValidVideoStream) {
 TEST_F(ReceiverSessionTest, HandlesNoValidStreams) {
   // We shouldn't call OnNegotiated if we failed to negotiate any streams.
   message_port_->ReceiveMessage(kNoAudioOrVideoOfferMessage);
-  const auto& messages = message_port_->posted_messages();
-  EXPECT_EQ(1u, messages.size());
-
-  auto message_body = json::Parse(messages[0]);
-  ExpectIsErrorAnswerMessage(message_body);
+  AssertGotAnErrorAnswerResponse();
 }
 
 TEST_F(ReceiverSessionTest, HandlesMalformedOffer) {
@@ -538,7 +542,6 @@ TEST_F(ReceiverSessionTest, HandlesMalformedOffer) {
   // is not valid JSON we actually have no way of knowing it's an offer at all,
   // so we call OnError and do not reply with an Answer.
   EXPECT_CALL(client_, OnError(session_.get(), _));
-
   message_port_->ReceiveMessage(kInvalidJsonOfferMessage);
 }
 
@@ -555,27 +558,19 @@ TEST_F(ReceiverSessionTest, HandlesOfferMissingMandatoryFields) {
   EXPECT_CALL(client_, OnError(session_.get(), _));
 
   message_port_->ReceiveMessage(kMissingMandatoryFieldOfferMessage);
-  const auto& messages = message_port_->posted_messages();
-  EXPECT_EQ(1u, messages.size());
-
-  auto message_body = json::Parse(messages[0]);
-  ExpectIsErrorAnswerMessage(message_body);
+  AssertGotAnErrorAnswerResponse();
 }
 
 TEST_F(ReceiverSessionTest, HandlesImproperlyFormattedOffer) {
   EXPECT_CALL(client_, OnError(session_.get(), _));
-
   message_port_->ReceiveMessage(kValidJsonInvalidFormatOfferMessage);
-  const auto& messages = message_port_->posted_messages();
-  EXPECT_EQ(1u, messages.size());
-
-  auto message_body = json::Parse(messages[0]);
-  ExpectIsErrorAnswerMessage(message_body);
+  AssertGotAnErrorAnswerResponse();
 }
 
 TEST_F(ReceiverSessionTest, HandlesNullOffer) {
   EXPECT_CALL(client_, OnError(session_.get(), _));
   message_port_->ReceiveMessage(kNullJsonOfferMessage);
+  AssertGotAnErrorAnswerResponse();
 }
 
 TEST_F(ReceiverSessionTest, HandlesInvalidSequenceNumber) {

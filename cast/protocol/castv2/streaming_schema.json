@@ -147,8 +147,7 @@
     "error": {
       "properties": {
         "code": {"type": "integer"},
-        "description": {"type": "string"},
-        "details": {"type": "string"}
+        "description": {"type": "string"}
       },
       "required": ["code", "description"]
     },
@@ -245,11 +244,11 @@
       ]
     }
   },
-  "required": ["type"],
+  "required": ["type", "seqNum"],
   "allOf": [
     {
       "if": {
-        "properties": {"type": {"enum": ["ANSWER", "CAPABILITIES_RESPONSE"]}}
+        "properties": {"type": {"enum": ["ANSWER", "CAPABILITIES_RESPONSE", "STATUS_RESPONSE"]}}
       },
       "then": {"required": ["result"]}
     },

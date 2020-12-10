@@ -93,7 +93,7 @@ void ExpectFailureOnParse(absl::string_view body) {
 }
 
 void ExpectEqualsValidOffer(const Offer& offer) {
-  EXPECT_EQ(CastMode::Type::kMirroring, offer.cast_mode.type);
+  EXPECT_EQ(CastMode::kMirroring, offer.cast_mode);
   EXPECT_EQ(true, offer.supports_wifi_status_reporting);
 
   // Verify list of video streams.

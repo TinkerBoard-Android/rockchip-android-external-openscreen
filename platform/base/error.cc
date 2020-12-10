@@ -190,6 +190,8 @@ std::ostream& operator<<(std::ostream& os, const Error::Code& code) {
       return os << "OperationInProgress";
     case Error::Code::kOperationCancelled:
       return os << "OperationCancelled";
+    case Error::Code::kTypeError:
+      return os << "TypeError";
     case Error::Code::kCastV2PeerCertEmpty:
       return os << "kCastV2PeerCertEmpty";
     case Error::Code::kCastV2WrongPayloadType:

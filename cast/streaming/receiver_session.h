@@ -15,6 +15,7 @@
 #include "cast/streaming/capture_configs.h"
 #include "cast/streaming/offer_messages.h"
 #include "cast/streaming/receiver_packet_router.h"
+#include "cast/streaming/sender_message.h"
 #include "cast/streaming/session_config.h"
 #include "cast/streaming/session_messager.h"
 #include "util/json/json_serialization.h"
@@ -107,7 +108,7 @@ class ReceiverSession final {
                   MessagePort* message_port,
                   Preferences preferences);
   ReceiverSession(const ReceiverSession&) = delete;
-  ReceiverSession(ReceiverSession&&) = delete;
+  ReceiverSession(ReceiverSession&&) noexcept = delete;
   ReceiverSession& operator=(const ReceiverSession&) = delete;
   ReceiverSession& operator=(ReceiverSession&&) = delete;
   ~ReceiverSession();
@@ -116,7 +117,7 @@ class ReceiverSession final {
 
  private:
   // Specific message type handler methods.
-  void OnOffer(SessionMessager::Message message);
+  void OnOffer(SenderMessage message);
 
   // Used by SpawnReceivers to generate a receiver for a specific stream.
   std::unique_ptr<Receiver> ConstructReceiver(const Stream& stream);
@@ -127,18 +128,20 @@ class ReceiverSession final {
                                      const VideoStream* video);
 
   // Callers of this method should ensure at least one stream is non-null.
-  Answer ConstructAnswer(SessionMessager::Message* message,
-                         const AudioStream* audio,
-                         const VideoStream* video);
+  Answer ConstructAnswer(const AudioStream* audio, const VideoStream* video);
 
   // Handles resetting receivers and notifying the client.
   void ResetReceivers(Client::ReceiversDestroyingReason reason);
 
+  // Sends an error answer reply and notifies the client of the error.
+  void SendErrorAnswerReply(int sequence_number, const char* message);
+
   Client* const client_;
   Environment* const environment_;
   const Preferences preferences_;
+  // The sender_id of this session.
   const std::string session_id_;
-  SessionMessager messager_;
+  ReceiverSessionMessager messager_;
 
   bool supports_wifi_status_reporting_ = false;
   ReceiverPacketRouter packet_router_;

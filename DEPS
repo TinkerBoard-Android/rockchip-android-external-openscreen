@@ -123,10 +123,16 @@ deps = {
     'condition': 'not build_with_chromium',
   },
 
+  'third_party/modp_b64': {
+    'url': Var('chromium_git') + '/chromium/src/third_party/modp_b64'
+    '@' + '85754265d3847383704d19232e1ab873547cda9d',
+    'condition': 'not build_with_chromium',
+  },
+
   'third_party/valijson/src': {
     'url': Var('github') + '/tristanpenman/valijson.git' +
       '@' + 'cf648930313655b19dc07ebae2f9c3fc37966a33', # Tip-of-tree
-    'condition': 'not build_with_chromium',
+    'condition': 'not build_with_chromium'
   }
 }
 

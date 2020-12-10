@@ -80,7 +80,7 @@ class SenderSession final {
                 Environment* environment,
                 MessagePort* message_port);
   SenderSession(const SenderSession&) = delete;
-  SenderSession(SenderSession&&) = delete;
+  SenderSession(SenderSession&&) noexcept = delete;
   SenderSession& operator=(const SenderSession&) = delete;
   SenderSession& operator=(SenderSession&&) = delete;
   ~SenderSession();
@@ -103,7 +103,7 @@ class SenderSession final {
   };
 
   // Specific message type handler methods.
-  void OnAnswer(SessionMessager::Message message);
+  void OnAnswer(ReceiverMessage message);
 
   // Used by SpawnSenders to generate a sender for a specific stream.
   std::unique_ptr<Sender> CreateSender(Ssrc receiver_ssrc,
@@ -135,7 +135,7 @@ class SenderSession final {
   // port for communicating to the Receiver over TLS.
   Client* const client_;
   Environment* const environment_;
-  SessionMessager messager_;
+  SenderSessionMessager messager_;
 
   // The packet router used for messaging across all senders.
   SenderPacketRouter packet_router_;

@@ -19,6 +19,7 @@
 #include "cast/streaming/receiver_session.h"
 #include "platform/base/error.h"
 #include "util/big_endian.h"
+#include "util/enum_name_table.h"
 #include "util/json/json_helpers.h"
 #include "util/json/json_serialization.h"
 #include "util/osp_logging.h"
@@ -142,10 +143,8 @@ ErrorOr<Stream> ParseStream(const Json::Value& value, Stream::Type type) {
   std::chrono::milliseconds target_delay_ms = kDefaultTargetPlayoutDelay;
   if (target_delay) {
     auto d = std::chrono::milliseconds(target_delay.value());
-    if (d >= kMinTargetPlayoutDelay && d <= kMaxTargetPlayoutDelay) {
+    if (kMinTargetPlayoutDelay <= d && d <= kMaxTargetPlayoutDelay) {
       target_delay_ms = d;
-    } else {
-      return json::CreateParameterError("target delay");
     }
   }
 
@@ -284,16 +283,10 @@ absl::string_view ToString(Stream::Type type) {
   }
 }
 
+EnumNameTable<CastMode, 2> kCastModeNames{
+    {{"mirroring", CastMode::kMirroring}, {"remoting", CastMode::kRemoting}}};
+
 }  // namespace
-
-constexpr char kCastMirroring[] = "mirroring";
-constexpr char kCastRemoting[] = "remoting";
-
-// static
-CastMode CastMode::Parse(absl::string_view value) {
-  return (value == kCastRemoting) ? CastMode{CastMode::Type::kRemoting}
-                                  : CastMode{CastMode::Type::kMirroring};
-}
 
 ErrorOr<Json::Value> Stream::ToJson() const {
   if (channels < 1 || index < 0 || target_delay.count() <= 0 ||
@@ -320,17 +313,6 @@ ErrorOr<Json::Value> Stream::ToJson() const {
   root["receiverRtcpDscp"] = receiver_rtcp_dscp;
   root["timeBase"] = "1/" + std::to_string(rtp_timebase);
   return root;
-}
-
-std::string CastMode::ToString() const {
-  switch (type) {
-    case Type::kMirroring:
-      return kCastMirroring;
-    case Type::kRemoting:
-      return kCastRemoting;
-    default:
-      OSP_NOTREACHED();
-  }
 }
 
 ErrorOr<Json::Value> AudioStream::ToJson() const {
@@ -396,7 +378,8 @@ ErrorOr<Offer> Offer::Parse(const Json::Value& root) {
   if (!root.isObject()) {
     return json::CreateParseError("null offer");
   }
-  CastMode cast_mode = CastMode::Parse(root["castMode"].asString());
+  ErrorOr<CastMode> cast_mode =
+      GetEnum(kCastModeNames, root["castMode"].asString());
   const ErrorOr<bool> get_status = json::ParseBool(root, "receiverGetStatus");
 
   Json::Value supported_streams = root[kSupportedStreams];
@@ -440,13 +423,14 @@ ErrorOr<Offer> Offer::Parse(const Json::Value& root) {
     }
   }
 
-  return Offer{cast_mode, get_status.value({}), std::move(audio_streams),
-               std::move(video_streams)};
+  return Offer{cast_mode.value(CastMode::kMirroring), get_status.value({}),
+               std::move(audio_streams), std::move(video_streams)};
 }
 
 ErrorOr<Json::Value> Offer::ToJson() const {
   Json::Value root;
-  root["castMode"] = cast_mode.ToString();
+
+  root["castMode"] = GetEnumName(kCastModeNames, cast_mode).value();
   root["receiverGetStatus"] = supports_wifi_status_reporting;
 
   Json::Value streams;
