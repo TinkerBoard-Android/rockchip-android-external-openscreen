@@ -75,10 +75,17 @@ class SenderSession final {
   // message port persist for at least the lifetime of the SenderSession. If
   // one of these classes needs to be reset, a new SenderSession should be
   // created.
+  //
+  // |message_source_id| and |message_destination_id| are the local and remote
+  // ID, respectively, to use when sending or receiving control messages (e.g.,
+  // OFFERs or ANSWERs) over the |message_port|. |message_port|'s SetClient()
+  // method will be called.
   SenderSession(IPAddress remote_address,
                 Client* const client,
                 Environment* environment,
-                MessagePort* message_port);
+                MessagePort* message_port,
+                std::string message_source_id,
+                std::string message_destination_id);
   SenderSession(const SenderSession&) = delete;
   SenderSession(SenderSession&&) noexcept = delete;
   SenderSession& operator=(const SenderSession&) = delete;
@@ -122,9 +129,6 @@ class SenderSession final {
 
   // Spawn a set of configured senders from the currently stored negotiation.
   ConfiguredSenders SpawnSenders(const Answer& answer);
-
-  // The sender ID of the Receiver for this session.
-  std::string receiver_sender_id_;
 
   // The remote address of the receiver we are communicating with. Used
   // for both TLS and UDP traffic.

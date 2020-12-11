@@ -198,9 +198,12 @@ int StandaloneSenderMain(int argc, char* argv[]) {
     }
   }
 
-  std::unique_ptr<LoopingFileCastAgent> cast_agent;
+  // |cast_agent| must be constructed and destroyed from a Task run by the
+  // TaskRunner.
+  LoopingFileCastAgent* cast_agent = nullptr;
   task_runner->PostTask([&] {
-    cast_agent = std::make_unique<LoopingFileCastAgent>(task_runner);
+    cast_agent = new LoopingFileCastAgent(
+        task_runner, [&] { task_runner->RequestStopSoon(); });
     cast_agent->Connect({remote_endpoint, path, max_bitrate,
                          true /* should_include_video */,
                          use_android_rtp_hack});
@@ -209,6 +212,16 @@ int StandaloneSenderMain(int argc, char* argv[]) {
   // Run the event loop until SIGINT (e.g., CTRL-C at the console) or
   // SIGTERM are signaled.
   task_runner->RunUntilSignaled();
+
+  // Spin the TaskRunner to destroy the |cast_agent| and execute any lingering
+  // destruction/shutdown tasks.
+  OSP_LOG_INFO << "Shutting down...";
+  task_runner->PostTask([&] {
+    delete cast_agent;
+    task_runner->RequestStopSoon();
+  });
+  task_runner->RunUntilStopped();
+  OSP_LOG_INFO << "Bye!";
 
   PlatformClientPosix::ShutDown();
   return 0;

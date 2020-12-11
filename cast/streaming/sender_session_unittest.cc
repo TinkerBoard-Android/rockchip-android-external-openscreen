@@ -153,9 +153,9 @@ class SenderSessionTest : public ::testing::Test {
   void SetUp() {
     message_port_ = std::make_unique<SimpleMessagePort>("receiver-12345");
     environment_ = MakeEnvironment();
-    session_ = std::make_unique<SenderSession>(IPAddress::kV4LoopbackAddress(),
-                                               &client_, environment_.get(),
-                                               message_port_.get());
+    session_ = std::make_unique<SenderSession>(
+        IPAddress::kV4LoopbackAddress(), &client_, environment_.get(),
+        message_port_.get(), "sender-12345", "receiver-12345");
   }
 
   std::string NegotiateOfferAndConstructAnswer() {

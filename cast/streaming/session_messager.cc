@@ -76,7 +76,7 @@ SenderSessionMessager::SenderSessionMessager(MessagePort* message_port,
                                              TaskRunner* task_runner)
     : SessionMessager(message_port, std::move(source_id), std::move(cb)),
       task_runner_(task_runner),
-      receiver_id_(receiver_id) {}
+      receiver_id_(std::move(receiver_id)) {}
 
 void SenderSessionMessager::SetHandler(ReceiverMessage::Type type,
                                        ReplyCallback cb) {
@@ -125,8 +125,8 @@ void SenderSessionMessager::OnMessage(const std::string& source_id,
                                       const std::string& message_namespace,
                                       const std::string& message) {
   if (source_id != receiver_id_) {
-    OSP_DLOG_WARN << "Received message from unknown/incorrect sender, expected "
-                     "id \""
+    OSP_DLOG_WARN << "Received message from unknown/incorrect Cast Receiver, "
+                     "expected id \""
                   << receiver_id_ << "\", got \"" << source_id << "\"";
     return;
   }

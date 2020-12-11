@@ -14,7 +14,6 @@
 
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
-#include "cast/common/channel/message_util.h"
 #include "cast/streaming/capture_recommendations.h"
 #include "cast/streaming/environment.h"
 #include "cast/streaming/message_fields.h"
@@ -137,8 +136,6 @@ bool AreAllValid(const std::vector<AudioCaptureConfig>& audio_configs,
                      IsValidVideoCaptureConfig);
 }
 
-static constexpr char kPlaceholderReceiverSenderId[] = "receiver-12345";
-
 }  // namespace
 
 SenderSession::Client::~Client() = default;
@@ -146,14 +143,16 @@ SenderSession::Client::~Client() = default;
 SenderSession::SenderSession(IPAddress remote_address,
                              Client* const client,
                              Environment* environment,
-                             MessagePort* message_port)
+                             MessagePort* message_port,
+                             std::string message_source_id,
+                             std::string message_destination_id)
     : remote_address_(remote_address),
       client_(client),
       environment_(environment),
       messager_(
           message_port,
-          MakeUniqueSessionId("sender"),
-          kPlaceholderReceiverSenderId,
+          std::move(message_source_id),
+          std::move(message_destination_id),
           [this](Error error) {
             OSP_DLOG_WARN << "SenderSession message port error: " << error;
             client_->OnError(this, error);
@@ -181,9 +180,6 @@ Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
   current_negotiation_ = std::unique_ptr<Negotiation>(new Negotiation{
       offer, std::move(audio_configs), std::move(video_configs)});
 
-  // Currently we don't have a way to discover the ID of the receiver we
-  // are connected to, since we have to send the first message.
-  // TODO(jophba): migrate to discovered receiver ID when available.
   return messager_.SendRequest(
       SenderMessage{SenderMessage::Type::kOffer, ++current_sequence_number_,
                     true, std::move(offer)},
