@@ -98,8 +98,10 @@ ReceiverSession::~ReceiverSession() {
 }
 
 void ReceiverSession::OnOffer(SenderMessage message) {
-  // We just drop offers we can't respond to.
-  if (message.sequence_number <= 0) {
+  // We just drop offers we can't respond to. Note that libcast senders will
+  // always send a strictly positive sequence numbers, but zero is permitted
+  // by the spec.
+  if (message.sequence_number < 0) {
     OSP_DLOG_WARN
         << "Dropping offer with missing sequence number, can't respond";
     return;
