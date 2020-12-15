@@ -9,6 +9,9 @@
 
 namespace openscreen {
 
+// static
+const UdpPacket::size_type UdpPacket::kUdpMaxPacketSize = 1 << 16;
+
 UdpPacket::UdpPacket() : std::vector<uint8_t>() {}
 
 UdpPacket::UdpPacket(size_type size, uint8_t fill_value)
