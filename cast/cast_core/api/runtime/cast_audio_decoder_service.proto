@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package cast.media;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
-import "google/protobuf/timestamp.proto";
 
 option optimize_for = LITE_RUNTIME;
 
@@ -116,17 +116,6 @@ message AudioDecoderBuffer {
   int64 id = 4;
 }
 
-// Info on pipeline latency.
-message RenderingDelay {
-  // The amount of data in pipeline (in microseconds) that has not been rendered
-  // yet.
-  int64 delay_micros = 1;
-
-  // Capture time (in microseconds) with respect to the system clock (must be
-  // CLOCK_MONOTONIC_RAW) at which the delay measurement was taken.
-  google.protobuf.Timestamp capture_time = 2;
-}
-
 message MediaTime {
   // The currents PTS that has been rendered.
   int64 current_pts_micros = 1;
@@ -134,15 +123,15 @@ message MediaTime {
   // The end of stream has been rendered.
   bool end_of_stream = 2;
 
-  // Capture time with respect to the system clock (must be
-  // CLOCK_MONOTONIC_RAW) at which the delay measurement was taken.
-  google.protobuf.Timestamp capture_time = 3;
+  // Capture time with respect to CLOCK_MONOTONIC_RAW at which the delay
+  // measurement was taken.
+  google.protobuf.Duration capture_time = 3;
 }
 
 message TimestampInfo {
-  // System timestamp with respect to the systme clock that the corresponding
-  // buffer is expected to be rendered at.
-  google.protobuf.Timestamp system_timestamp = 1;
+  // System timestamp with respect to CLOCK_MONOTONIC_RAW at which the
+  // corresponding buffer is expected to be rendered.
+  google.protobuf.Duration system_timestamp = 1;
 
   // AudioDecoderBuffer.id associated with the |system_timestamp|.
   int64 buffer_id = 2;
