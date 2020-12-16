@@ -26,6 +26,7 @@
 #include "platform/impl/platform_client_posix.h"
 #include "platform/impl/task_runner.h"
 #include "platform/impl/text_trace_logging_platform.h"
+#include "util/chrono_helpers.h"
 #include "util/stringprintf.h"
 
 namespace openscreen {
@@ -173,7 +174,7 @@ int StandaloneSenderMain(int argc, char* argv[]) {
 #endif
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
-  PlatformClientPosix::Create(Clock::duration{50}, Clock::duration{50},
+  PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
 
   IPEndpoint remote_endpoint = ParseAsEndpoint(iface_or_endpoint);

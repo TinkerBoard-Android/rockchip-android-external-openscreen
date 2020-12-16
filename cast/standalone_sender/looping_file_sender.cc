@@ -132,7 +132,7 @@ void LoopingFileSender::OnVideoFrame(const AVFrame& av_frame,
 void LoopingFileSender::UpdateStatusOnConsole() {
   const Clock::duration elapsed = latest_frame_time_ - capture_start_time_;
   const auto seconds_part = to_seconds(elapsed);
-  const auto millis_part = to_microseconds(elapsed - seconds_part);
+  const auto millis_part = to_milliseconds(elapsed - seconds_part);
   // The control codes here attempt to erase the current line the cursor is
   // on, and then print out the updated status text. If the terminal does not
   // support simple ANSI escape codes, the following will still work, but
