@@ -264,7 +264,7 @@ SenderSession::ConfiguredSenders SenderSession::SpawnSenders(
   OSP_DCHECK(current_negotiation_);
 
   // Although we already have a message port set up with the TLS
-  // address of the receiver, we don't know where to send the seperate UDP
+  // address of the receiver, we don't know where to send the separate UDP
   // stream until we get the ANSWER message here.
   environment_->set_remote_endpoint(
       IPEndpoint{remote_address_, static_cast<uint16_t>(answer.udp_port)});

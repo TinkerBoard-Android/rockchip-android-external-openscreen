@@ -55,7 +55,7 @@ class SenderSession final {
    public:
     // Called when a new set of senders has been negotiated. This may be
     // called multiple times during a session, once for every time Negotiate()
-    // is called on the SenderSession object. The negotation call also includes
+    // is called on the SenderSession object. The negotiation call also includes
     // capture recommendations that can be used by the sender to provide
     // an optimal video stream for the receiver.
     virtual void OnNegotiated(

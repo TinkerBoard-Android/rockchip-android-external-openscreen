@@ -446,7 +446,7 @@ TEST_F(SenderSessionTest, HandlesErrorMessage) {
   message_port_->ReceiveMessage(kErrorAnswerMessage);
 }
 
-TEST_F(SenderSessionTest, DoesntCrashOnMessagePortError) {
+TEST_F(SenderSessionTest, DoesNotCrashOnMessagePortError) {
   session_->Negotiate(
       std::vector<AudioCaptureConfig>{kAudioCaptureConfigValid},
       std::vector<VideoCaptureConfig>{kVideoCaptureConfigValid});

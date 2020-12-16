@@ -588,7 +588,7 @@ TEST_F(ReceiverSessionTest, HandlesInvalidTypeMessage) {
   message_port_->ReceiveMessage(kInvalidTypeMessage);
 }
 
-TEST_F(ReceiverSessionTest, DoesntCrashOnMessagePortError) {
+TEST_F(ReceiverSessionTest, DoesNotCrashOnMessagePortError) {
   message_port_->ReceiveError(Error(Error::Code::kUnknownError));
 }
 
