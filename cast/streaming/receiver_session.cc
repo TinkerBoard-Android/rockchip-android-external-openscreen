@@ -157,10 +157,11 @@ void ReceiverSession::OnOffer(SenderMessage message) {
 
 std::unique_ptr<Receiver> ReceiverSession::ConstructReceiver(
     const Stream& stream) {
+  // Session config is currently only for mirroring.
   SessionConfig config = {stream.ssrc,         stream.ssrc + 1,
                           stream.rtp_timebase, stream.channels,
                           stream.target_delay, stream.aes_key,
-                          stream.aes_iv_mask};
+                          stream.aes_iv_mask,  /* is_pli_enabled */ true};
   return std::make_unique<Receiver>(environment_, &packet_router_,
                                     std::move(config));
 }

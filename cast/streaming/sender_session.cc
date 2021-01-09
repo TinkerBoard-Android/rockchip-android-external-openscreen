@@ -215,9 +215,15 @@ void SenderSession::OnAnswer(ReceiverMessage message) {
 std::unique_ptr<Sender> SenderSession::CreateSender(Ssrc receiver_ssrc,
                                                     const Stream& stream,
                                                     RtpPayloadType type) {
-  SessionConfig config{
-      stream.ssrc,         receiver_ssrc,  stream.rtp_timebase, stream.channels,
-      stream.target_delay, stream.aes_key, stream.aes_iv_mask};
+  // Session config is currently only for mirroring.
+  SessionConfig config{stream.ssrc,
+                       receiver_ssrc,
+                       stream.rtp_timebase,
+                       stream.channels,
+                       stream.target_delay,
+                       stream.aes_key,
+                       stream.aes_iv_mask,
+                       /* is_pli_enabled*/ true};
 
   return std::make_unique<Sender>(environment_, &packet_router_,
                                   std::move(config), type);
