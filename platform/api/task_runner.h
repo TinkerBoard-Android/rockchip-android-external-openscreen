@@ -22,7 +22,13 @@ namespace openscreen {
 //     B runs (even if A and B run on different threads).
 class TaskRunner {
  public:
+// Seem to get an error using clang when compiling with -fno-exceptions:
+//   error: implicit instantiation of undefined template 'std::__1::packaged_task<void () noexcept>'
+#if __has_feature(cxx_exceptions)
   using Task = std::packaged_task<void() noexcept>;
+#else
+  using Task = std::packaged_task<void()>;
+#endif
 
   virtual ~TaskRunner() = default;
 
