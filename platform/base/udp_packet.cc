@@ -19,7 +19,7 @@ UdpPacket::UdpPacket(size_type size, uint8_t fill_value)
   assert(size <= kUdpMaxPacketSize);
 }
 
-UdpPacket::UdpPacket(UdpPacket&& other) = default;
+UdpPacket::UdpPacket(UdpPacket&& other) noexcept = default;
 
 UdpPacket::UdpPacket(std::initializer_list<uint8_t> init)
     : std::vector<uint8_t>(init) {
