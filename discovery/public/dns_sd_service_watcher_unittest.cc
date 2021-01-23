@@ -88,7 +88,9 @@ class TestServiceWatcher : public DnsSdServiceWatcher<std::string> {
             service,
             kCastServiceId,
             [this](const DnsSdInstance& instance) { return Convert(instance); },
-            [this](std::vector<ConstRefT> ref) { Callback(std::move(ref)); }) {}
+            [this](std::vector<ConstRefT> ref, ConstRefT service, ServicesUpdatedState state) {
+                    Callback(std::move(ref));
+            }) {}
 
   MOCK_METHOD1(Callback, void(std::vector<ConstRefT>));
 
