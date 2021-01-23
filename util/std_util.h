@@ -11,7 +11,11 @@
 #include <utility>
 #include <vector>
 
+// TODO: This header is included in the openscreen discovery public headers (dns_sd_instance.h),
+// which exposes this abseil header. Need to figure out a way to hide it.
+#if 0
 #include "absl/algorithm/container.h"
+#endif
 #include "util/stringprintf.h"
 
 namespace openscreen {
@@ -47,10 +51,12 @@ void RemoveValueFromMap(std::map<Key, Value*>* map, Value* value) {
   }
 }
 
+#if 0
 template <typename ForwardIteratingContainer>
 bool AreElementsSortedAndUnique(const ForwardIteratingContainer& c) {
   return absl::c_is_sorted(c) && (absl::c_adjacent_find(c) == c.end());
 }
+#endif
 
 template <typename RandomAccessContainer>
 void SortAndDedupeElements(RandomAccessContainer* c) {
