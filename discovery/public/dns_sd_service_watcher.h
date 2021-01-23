@@ -36,6 +36,12 @@ class DnsSdServiceWatcher : public DnsSdQuerier::Callback {
  public:
   using ConstRefT = std::reference_wrapper<const T>;
 
+  enum class ServicesUpdatedState {
+      EndpointCreated,
+      EndpointUpdated,
+      EndpointDeleted,
+  };
+
   // The method which will be called when any new service instance is
   // discovered, a service instance changes its data (such as TXT or A data), or
   // a previously discovered service instance ceases to be available. The vector
@@ -44,7 +50,9 @@ class DnsSdServiceWatcher : public DnsSdQuerier::Callback {
   // NOTE: This callback may not modify the DnsSdServiceWatcher instance from
   // which it is called.
   using ServicesUpdatedCallback =
-      std::function<void(std::vector<ConstRefT> services)>;
+      std::function<void(std::vector<ConstRefT> services,
+                         ConstRefT service,
+                         ServicesUpdatedState state)>;
 
   // This function type is responsible for converting from a DNS service
   // instance (received from another mDNS endpoint) to a T type to be returned
@@ -143,7 +151,7 @@ class DnsSdServiceWatcher : public DnsSdQuerier::Callback {
     }
     records_[GetKey(new_endpoint)] =
         std::make_unique<T>(std::move(record.value()));
-    callback_(GetServices());
+    callback_(GetServices(), *records_[GetKey(new_endpoint)].get(), ServicesUpdatedState::EndpointCreated);
   }
 
   void OnEndpointUpdated(
@@ -159,7 +167,7 @@ class DnsSdServiceWatcher : public DnsSdQuerier::Callback {
       auto ptr = std::make_unique<T>(std::move(record.value()));
       it->second.swap(ptr);
 
-      callback_(GetServices());
+      callback_(GetServices(), *it->second.get(), ServicesUpdatedState::EndpointUpdated);
     } else {
       OSP_LOG_INFO
           << "Received modified record for non-existent DNS-SD Instance "
@@ -168,8 +176,11 @@ class DnsSdServiceWatcher : public DnsSdQuerier::Callback {
   }
 
   void OnEndpointDeleted(const DnsSdInstanceEndpoint& old_endpoint) override {
-    if (records_.erase(GetKey(old_endpoint))) {
-      callback_(GetServices());
+    auto it = records_.find(GetKey(old_endpoint));
+    if (it != records_.end()) {
+      auto ptr = std::move(it->second);
+      records_.erase(it);
+      callback_(GetServices(), *ptr.get(), ServicesUpdatedState::EndpointDeleted);
     } else {
       OSP_LOG_INFO
           << "Received deletion of record for non-existent DNS-SD Instance "
