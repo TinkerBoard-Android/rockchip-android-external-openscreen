@@ -10,7 +10,11 @@
 #include <ostream>
 #include <string>
 
+// TODO: This header is included in the openscreen discovery public headers (dns_sd_instance.h),
+// which exposes this abseil header. Need to figure out a way to hide it.
+#if 0
 #include "absl/types/span.h"
+#endif
 
 namespace openscreen {
 
@@ -54,8 +58,10 @@ void PrettyPrintAsciiHex(std::ostream& os, It first, It last) {
   }
 }
 
+#if 0
 // Returns a hex string representation of the given |bytes|.
 std::string HexEncode(absl::Span<const uint8_t> bytes);
+#endif
 
 }  // namespace openscreen
 
