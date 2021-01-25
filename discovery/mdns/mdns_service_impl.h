@@ -40,8 +40,7 @@ class MdnsServiceImpl : public MdnsService, public UdpSocket::Client {
                   ClockNowFunctionPtr now_function,
                   ReportingClient* reporting_client,
                   const Config& config,
-                  NetworkInterfaceIndex network_interface,
-                  Config::NetworkInfo::AddressFamilies supported_address_types);
+                  const Config::NetworkInfo& network_info);
   ~MdnsServiceImpl() override;
 
   // MdnsService Overrides.
