@@ -90,7 +90,7 @@ class ReceiverSession final {
 
     Preferences(Preferences&&) noexcept;
     Preferences(const Preferences&) = delete;
-    Preferences& operator=(Preferences&&);
+    Preferences& operator=(Preferences&&) noexcept;
     Preferences& operator=(const Preferences&) = delete;
 
     std::vector<VideoCodec> video_codecs{VideoCodec::kVp8, VideoCodec::kH264};
