@@ -66,6 +66,7 @@ class MdnsServiceImpl : public MdnsService, public UdpSocket::Client {
   void OnError(UdpSocket* socket, Error error) override;
   void OnSendError(UdpSocket* socket, Error error) override;
   void OnRead(UdpSocket* socket, ErrorOr<UdpPacket> packet) override;
+  void OnBound(UdpSocket* socket) override;
 
  private:
   TaskRunner* const task_runner_;
@@ -76,6 +77,7 @@ class MdnsServiceImpl : public MdnsService, public UdpSocket::Client {
   MdnsReceiver receiver_;
 
   // Sockets to send and receive mDNS data.
+  NetworkInterfaceIndex interface_;
   std::unique_ptr<UdpSocket> socket_v4_;
   std::unique_ptr<UdpSocket> socket_v6_;
 
