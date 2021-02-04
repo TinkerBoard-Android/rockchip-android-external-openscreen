@@ -54,9 +54,9 @@ const IPAddress kDefaultMulticastGroupIPv6{
 
 // The send address for multicast mDNS should be the any address (0.*) on the
 // default mDNS multicast port.
-const IPEndpoint kMulticastSendIPv4Endpoint{IPAddress::kAnyV4(),
+const IPEndpoint kMulticastSendIPv4Endpoint{kDefaultMulticastGroupIPv4,
                                             kDefaultMulticastPort};
-const IPEndpoint kMulticastSendIPv6Endpoint{IPAddress::kAnyV6(),
+const IPEndpoint kMulticastSendIPv6Endpoint{kDefaultMulticastGroupIPv6,
                                             kDefaultMulticastPort};
 
 // IPv4 group address for joining cast-specific site-local mDNS multicast group,

@@ -42,11 +42,12 @@ MdnsServiceImpl::MdnsServiceImpl(TaskRunner* task_runner,
   // Create all UDP sockets needed for this object. They should not yet be bound
   // so that they do not send or receive data until the objects on which their
   // callback depends is initialized.
+  // NOTE: we bind to the Any addresses here because traffic is filtered by
+  // the multicast join calls.
   if (network_info.supported_address_families & Config::NetworkInfo::kUseIpV4) {
-    ErrorOr<std::unique_ptr<UdpSocket>> socket =
-        UdpSocket::Create(task_runner, this,
-                          IPEndpoint{network_info.interface.GetIpAddressV4(),
-                                     kDefaultMulticastPort});
+    ErrorOr<std::unique_ptr<UdpSocket>> socket = UdpSocket::Create(
+        task_runner, this,
+        IPEndpoint{IPAddress::kAnyV4(), kDefaultMulticastPort});
     OSP_DCHECK(!socket.is_error());
     OSP_DCHECK(socket.value().get());
     OSP_DCHECK(socket.value()->IsIPv4());
@@ -55,10 +56,9 @@ MdnsServiceImpl::MdnsServiceImpl(TaskRunner* task_runner,
   }
 
   if (network_info.supported_address_families & Config::NetworkInfo::kUseIpV6) {
-    ErrorOr<std::unique_ptr<UdpSocket>> socket =
-        UdpSocket::Create(task_runner, this,
-                          IPEndpoint{network_info.interface.GetIpAddressV6(),
-                                     kDefaultMulticastPort});
+    ErrorOr<std::unique_ptr<UdpSocket>> socket = UdpSocket::Create(
+        task_runner, this,
+        IPEndpoint{IPAddress::kAnyV6(), kDefaultMulticastPort});
     OSP_DCHECK(!socket.is_error());
     OSP_DCHECK(socket.value().get());
     OSP_DCHECK(socket.value()->IsIPv6());
