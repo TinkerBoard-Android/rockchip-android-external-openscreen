@@ -13,7 +13,9 @@
 #include <time.h>
 
 #include <chrono>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cast/common/certificate/types.h"
@@ -25,6 +27,14 @@ namespace cast {
 namespace {
 
 constexpr static int32_t kMinRsaModulusLengthBits = 2048;
+
+// TODO(davidben): Switch this to bssl::UniquePtr after
+// https://boringssl-review.googlesource.com/c/boringssl/+/46105 lands.
+struct FreeNameConstraints {
+  void operator()(NAME_CONSTRAINTS* nc) { NAME_CONSTRAINTS_free(nc); }
+};
+using NameConstraintsPtr =
+    std::unique_ptr<NAME_CONSTRAINTS, FreeNameConstraints>;
 
 // Stores intermediate state while attempting to find a valid certificate chain
 // from a set of trusted certificates to a target certificate.  Together, a
@@ -108,7 +118,7 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
   // Default max path length is the number of intermediate certificates.
   int max_pathlen = path.size() - 2;
 
-  std::vector<NAME_CONSTRAINTS*> path_name_constraints;
+  std::vector<NameConstraintsPtr> path_name_constraints;
   Error::Code error = Error::Code::kNone;
   uint32_t i = step_index;
   for (; i < path.size() - 1; ++i) {
@@ -179,29 +189,25 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
     // NOTE: (!self-issued || target) -> verify name constraints.  Target case
     // is after the loop.
     if (!issuer_is_self_issued) {
-      for (NAME_CONSTRAINTS* name_constraints : path_name_constraints) {
-        if (NAME_CONSTRAINTS_check(subject, name_constraints) != X509_V_OK) {
+      for (const auto& name_constraints : path_name_constraints) {
+        if (NAME_CONSTRAINTS_check(subject, name_constraints.get()) !=
+            X509_V_OK) {
           return Error::Code::kErrCertsVerifyGeneric;
         }
       }
     }
 
-    // TODO(davidben): This code repurposes BoringSSL's internal caches for
-    // application-specific storage. Manage this state separately.
-    if (issuer->nc) {
-      path_name_constraints.push_back(issuer->nc);
-    } else {
-      const int index = X509_get_ext_by_NID(issuer, NID_name_constraints, -1);
-      if (index != -1) {
-        X509_EXTENSION* ext = X509_get_ext(issuer, index);
-        auto* nc = reinterpret_cast<NAME_CONSTRAINTS*>(X509V3_EXT_d2i(ext));
-        if (nc) {
-          issuer->nc = nc;
-          path_name_constraints.push_back(nc);
-        } else {
-          return Error::Code::kErrCertsVerifyGeneric;
-        }
-      }
+    int critical;
+    NameConstraintsPtr nc{reinterpret_cast<NAME_CONSTRAINTS*>(
+        X509_get_ext_d2i(issuer, NID_name_constraints, &critical, nullptr))};
+    if (!nc && critical != -1) {
+      // X509_get_ext_d2i's error handling is a little confusing. See
+      // https://boringssl.googlesource.com/boringssl/+/215f4a0287/include/openssl/x509.h#1384
+      // https://boringssl.googlesource.com/boringssl/+/215f4a0287/include/openssl/x509v3.h#651
+      return Error::Code::kErrCertsVerifyGeneric;
+    }
+    if (nc) {
+      path_name_constraints.push_back(std::move(nc));
     }
 
     // Check that any policy mappings present are _not_ the anyPolicy OID.  Even
@@ -276,8 +282,8 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
     }
   }
   // NOTE: Other half of ((!self-issued || target) -> check name constraints).
-  for (NAME_CONSTRAINTS* name_constraints : path_name_constraints) {
-    if (NAME_CONSTRAINTS_check(path.back().cert, name_constraints) !=
+  for (const auto& name_constraints : path_name_constraints) {
+    if (NAME_CONSTRAINTS_check(path.back().cert, name_constraints.get()) !=
         X509_V_OK) {
       return Error::Code::kErrCertsVerifyGeneric;
     }
