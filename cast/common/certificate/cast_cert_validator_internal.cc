@@ -115,6 +115,7 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
     X509* subject = path[i + 1].cert;
     X509* issuer = path[i].cert;
     bool is_root = (i == step_index);
+    bool issuer_is_self_issued = false;
     if (!is_root) {
       if ((error = VerifyCertTime(issuer, time)) != Error::Code::kNone) {
         return error;
@@ -126,14 +127,10 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
         }
         --max_pathlen;
       } else {
-        // TODO(davidben): This code repurposes BoringSSL's internal caches for
-        // application-specific storage. Manage this state separately.
-        issuer->ex_flags |= EXFLAG_SI;
+        issuer_is_self_issued = true;
       }
     } else {
-      // TODO(davidben): This code repurposes BoringSSL's internal caches for
-      // application-specific storage. Manage this state separately.
-      issuer->ex_flags |= EXFLAG_SI;
+      issuer_is_self_issued = true;
     }
 
     bssl::UniquePtr<ASN1_BIT_STRING> key_usage = GetKeyUsage(issuer);
@@ -181,8 +178,7 @@ Error::Code VerifyCertificateChain(const std::vector<CertPathStep>& path,
 
     // NOTE: (!self-issued || target) -> verify name constraints.  Target case
     // is after the loop.
-    const bool is_self_issued = issuer->ex_flags & EXFLAG_SI;
-    if (!is_self_issued) {
+    if (!issuer_is_self_issued) {
       for (NAME_CONSTRAINTS* name_constraints : path_name_constraints) {
         if (NAME_CONSTRAINTS_check(subject, name_constraints) != X509_V_OK) {
           return Error::Code::kErrCertsVerifyGeneric;
