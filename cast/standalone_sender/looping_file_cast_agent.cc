@@ -299,8 +299,6 @@ void LoopingFileCastAgent::OnNegotiated(
     return;
   }
 
-  OSP_LOG_INFO << "Streaming to " << connection_settings_->receiver_endpoint
-               << "...";
   file_sender_ = std::make_unique<LoopingFileSender>(
       environment_.get(), connection_settings_->path_to_file.c_str(), senders,
       connection_settings_->max_bitrate);

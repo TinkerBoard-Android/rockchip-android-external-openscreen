@@ -274,6 +274,7 @@ SenderSession::ConfiguredSenders SenderSession::SpawnSenders(
   // stream until we get the ANSWER message here.
   environment_->set_remote_endpoint(
       IPEndpoint{remote_address_, static_cast<uint16_t>(answer.udp_port)});
+  OSP_LOG_INFO << "Streaming to " << environment_->remote_endpoint() << "...";
 
   ConfiguredSenders senders;
   for (size_t i = 0; i < answer.send_indexes.size(); ++i) {
