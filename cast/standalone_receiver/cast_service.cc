@@ -84,6 +84,7 @@ CastService::CastService(TaskRunner* task_runner,
     info.unique_id = HexEncode(interface.hardware_address);
     info.friendly_name = friendly_name;
     info.model_name = model_name;
+    info.capabilities = kHasVideoOutput | kHasAudioOutput;
     Error error = discovery_publisher_->Register(info);
     if (!error.ok()) {
       OnFatalError(std::move(error));
