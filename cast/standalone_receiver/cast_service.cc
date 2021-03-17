@@ -38,8 +38,7 @@ discovery::Config MakeDiscoveryConfig(const InterfaceInfo& interface) {
       discovery::Config::NetworkInfo::kNoAddressFamily;
   if (interface.GetIpAddressV4()) {
     supported_address_families |= discovery::Config::NetworkInfo::kUseIpV4;
-  }
-  if (interface.GetIpAddressV6()) {
+  } else if (interface.GetIpAddressV6()) {
     supported_address_families |= discovery::Config::NetworkInfo::kUseIpV6;
   }
   config.network_info.push_back({interface, supported_address_families});
