@@ -174,7 +174,9 @@ int StandaloneSenderMain(int argc, char* argv[]) {
 #endif
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
-  PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
+  // Cast has high networking demands--network operation timing and timeout must
+  // be kept extremely small.
+  PlatformClientPosix::Create(microseconds(50), microseconds(50),
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
 
   IPEndpoint remote_endpoint = ParseAsEndpoint(iface_or_endpoint);

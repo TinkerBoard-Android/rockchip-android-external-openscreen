@@ -9,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "platform/api/time.h"
@@ -41,7 +42,8 @@ class PlatformClientPosix {
   // |networking_loop_interval| sets the minimum amount of time that should pass
   // between iterations of the loop used to handle networking operations. Higher
   // values will result in less time being spent on these operations, but also
-  // potentially less performant networking operations.
+  // less performant networking operations. Be careful setting values larger
+  // than a few hundred microseconds.
   //
   // |networking_operation_timeout| sets how much time may be spent on a
   // single networking operation type.

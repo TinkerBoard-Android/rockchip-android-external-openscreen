@@ -230,7 +230,9 @@ int RunStandaloneReceiver(int argc, char* argv[]) {
   }
 
   auto* const task_runner = new TaskRunnerImpl(&Clock::now);
-  PlatformClientPosix::Create(milliseconds(50), milliseconds(50),
+  // Cast has high networking demands--network operation timing and timeout must
+  // be kept extremely small.
+  PlatformClientPosix::Create(microseconds(50), microseconds(50),
                               std::unique_ptr<TaskRunnerImpl>(task_runner));
   RunCastService(task_runner, interface, std::move(creds.value()),
                  friendly_name, model_name, discovery_enabled);
