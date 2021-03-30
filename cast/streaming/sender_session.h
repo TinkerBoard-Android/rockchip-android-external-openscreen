@@ -98,6 +98,11 @@ class SenderSession final {
   Error Negotiate(std::vector<AudioCaptureConfig> audio_configs,
                   std::vector<VideoCaptureConfig> video_configs);
 
+  // Get the current network usage (in bits per second). This includes all
+  // senders managed by this session, and is a best guess based on receiver
+  // feedback. Embedders may use this information to throttle capture devices.
+  int GetEstimatedNetworkBandwidth() const;
+
  private:
   // We store the current negotiation, so that when we get an answer from the
   // receiver we can line up the selected streams with the original

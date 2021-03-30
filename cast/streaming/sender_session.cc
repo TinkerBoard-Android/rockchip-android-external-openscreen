@@ -187,6 +187,10 @@ Error SenderSession::Negotiate(std::vector<AudioCaptureConfig> audio_configs,
       [this](ReceiverMessage message) { OnAnswer(message); });
 }
 
+int SenderSession::GetEstimatedNetworkBandwidth() const {
+  return packet_router_.ComputeNetworkBandwidth();
+}
+
 void SenderSession::OnAnswer(ReceiverMessage message) {
   OSP_LOG_WARN << "Message sn: " << message.sequence_number
                << ", current: " << current_sequence_number_;

@@ -454,5 +454,12 @@ TEST_F(SenderSessionTest, DoesNotCrashOnMessagePortError) {
   message_port_->ReceiveError(Error(Error::Code::kUnknownError));
 }
 
+TEST_F(SenderSessionTest, ReportsZeroBandwidthWhenNoPacketsSent) {
+  // TODO(issuetracker.google.com/183996645): As part of end to end testing,
+  // we need to ensure that we are providing reasonable network bandwidth
+  // measurements.
+  EXPECT_EQ(0, session_->GetEstimatedNetworkBandwidth());
+}
+
 }  // namespace cast
 }  // namespace openscreen
