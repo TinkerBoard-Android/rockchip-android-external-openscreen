@@ -17,7 +17,6 @@
 #include "platform/impl/socket_handle_waiter_posix.h"
 #include "platform/impl/task_runner.h"
 #include "platform/impl/tls_data_router_posix.h"
-#include "util/operation_loop.h"
 
 namespace openscreen {
 
@@ -50,13 +49,11 @@ class PlatformClientPosix {
   //
   // |task_runner| is a client-provided TaskRunner implementation.
   static void Create(Clock::duration networking_operation_timeout,
-                     Clock::duration networking_loop_interval,
                      std::unique_ptr<TaskRunnerImpl> task_runner);
 
   // Initializes the platform implementation and creates a new TaskRunner (which
   // starts a new thread).
-  static void Create(Clock::duration networking_operation_timeout,
-                     Clock::duration networking_loop_interval);
+  static void Create(Clock::duration networking_operation_timeout);
 
   // Shuts down and deletes the PlatformClient instance currently stored as a
   // singleton. This method is expected to be called before program exit. After
@@ -85,31 +82,25 @@ class PlatformClientPosix {
   static void SetInstance(PlatformClientPosix* client);
 
  private:
-  PlatformClientPosix(Clock::duration networking_operation_timeout,
-                      Clock::duration networking_loop_interval);
+  explicit PlatformClientPosix(Clock::duration networking_operation_timeout);
 
   PlatformClientPosix(Clock::duration networking_operation_timeout,
-                      Clock::duration networking_loop_interval,
                       std::unique_ptr<TaskRunnerImpl> task_runner);
 
   // This method is thread-safe.
   SocketHandleWaiterPosix* socket_handle_waiter();
 
-  // Helper functions to use when creating and calling the OperationLoop used
-  // for the networking thread.
-  void PerformSocketHandleWaiterActions(Clock::duration timeout);
-  void PerformTlsDataRouterActions(Clock::duration timeout);
-  std::vector<std::function<void(Clock::duration)>> networking_operations();
-
-  // Instance objects with threads are created at object-creation time.
-  // NOTE: Delayed instantiation of networking_loop_ may be useful in future.
-  OperationLoop networking_loop_;
+  void RunNetworkLoopUntilStopped();
 
   std::unique_ptr<TaskRunnerImpl> task_runner_;
 
   // Track whether the associated instance variable has been created yet.
   std::atomic_bool waiter_created_{false};
   std::atomic_bool tls_data_router_created_{false};
+
+  // Parameters for networking loop.
+  std::atomic_bool networking_loop_running_{true};
+  Clock::duration networking_loop_timeout_;
 
   // Flags used to ensure that initialization of below instance objects occurs
   // only once across all threads.
